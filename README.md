@@ -4,8 +4,8 @@ Search for a board game by name, and find the conventions and board game cafes t
 
 ## Requirements
 
-- Node.js 22.12 or later (see `.nvmrc`)
-- pnpm 9
+- Node.js 26 or later (see `.nvmrc`)
+- pnpm 12
 
 ## Getting Started
 
