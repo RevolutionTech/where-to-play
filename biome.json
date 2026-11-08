@@ -1,7 +1,7 @@
 {
   "$schema": "./node_modules/@biomejs/biome/configuration_schema.json",
   "vcs": { "enabled": true, "clientKind": "git", "useIgnoreFile": true },
-  "files": { "includes": ["**", "!**/routeTree.gen.ts"] },
+  "files": { "includes": ["**", "!**/routeTree.gen.ts", "!server/drizzle/meta"] },
   "formatter": { "indentStyle": "space", "lineWidth": 100 },
   "css": { "parser": { "tailwindDirectives": true } },
   "linter": { "rules": { "preset": "recommended" } },

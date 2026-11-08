@@ -8,7 +8,7 @@ Browser ──> client (React SPA) ──/api──> server (Hono) ──> Postg
 
 - **Client:** a static SPA. It holds filter and search state in the URL, so views can be shared and bookmarked.
 - **Server:** a stateless JSON API under `/api`. The client calls it through Hono's typed RPC client, so API types flow from server to client with no code generation.
-- **Database:** PostgreSQL. Local in development, Supabase in production. One `DATABASE_URL` selects the database.
+- **Database:** PostgreSQL. Local in development (Docker), Supabase in production. One `DATABASE_URL` selects the database. The server uses Drizzle ORM with postgres.js. All tables are in the `where_to_play` schema. See [0002](decisions/0002-database.md).
 
 ## Same Origin
 
@@ -19,10 +19,12 @@ The client and server share one origin. In development, the Vite dev server send
 The target hosting is a free serverless tier, such as Cloudflare Workers. For this reason:
 
 - `server/src/app.ts` builds the app with web-standard APIs only. Each runtime gets a thin entry file (today: `server/src/server.ts` for Node).
+- The entry file creates the database client and passes it to `createApp`. No module creates a client at top level.
+- postgres.js runs with prepared statements turned off, so it works through Supabase's transaction pooler.
 - The server keeps no state in memory between requests and runs no background jobs.
 
 ## Not Yet Built
 
-- Database schema, migrations, and connection (Drizzle ORM).
+- Importers for collection sources, and migration of data from the legacy project.
 - Filter and search endpoints and UI.
 - Deployment.
