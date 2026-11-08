@@ -15,8 +15,8 @@ Collections of games come from many places: BGG collections, Google Sheets, Tabl
 - **A separate `where_to_play` Postgres schema.** It keeps the app's tables apart from other tables in the database. Supabase does not expose it through its REST API by default.
 - **`pg_trgm` in an `extensions` schema.** Supabase installs extensions there. SQL refers to it by full name, for example `extensions.similarity`, because `extensions` is not always on the `search_path`.
 - **Tables:**
-  - `games`: an internal ID is the primary key, because some games are not on BGG. `bgg_id` is unique and nullable.
-  - `game_names`: every name of a game, including the main one. `name_normalized` is generated: lowercase, with runs of punctuation and spaces changed to one space. It is unique, so each name resolves to exactly one game. It has a trigram index for fuzzy search.
+  - `games`: an internal ID is the primary key, because some games are not on BGG. `bgg_id` is unique and nullable. `name` is the name that the app shows.
+  - `game_names`: the names that collections use for a game. Usually one of them is the same as `games.name`, but this is not required. `name_normalized` is generated: lowercase, with runs of punctuation and spaces changed to one space. It is unique, so each name resolves to exactly one game. It has a trigram index for fuzzy search.
   - `collections`: one row for each collection. `kind` is `cafe` or `convention`. We will add a new kind when a real collection needs it. `bgg_tag` is the BGG tag that the importer syncs with. The import source is in the same row (`source_kind` and a typed `source_config` JSON), because each collection has one source today. Every collection must have a source.
   - `collection_games`: which games are in which collection.
 
