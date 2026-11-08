@@ -8,6 +8,23 @@ on:
 jobs:
   check:
     runs-on: ubuntu-latest
+    services:
+      postgres:
+        # Keep in sync with the image in docker-compose.yml.
+        image: postgres:15-alpine
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: where_to_play_test
+        ports:
+          - 54329:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d where_to_play_test"
+          --health-interval 2s
+          --health-timeout 5s
+          --health-retries 15
+    env:
+      TEST_DATABASE_URL: postgres://postgres:postgres@localhost:54329/where_to_play_test
     steps:
       - uses: actions/checkout@v7
       - uses: pnpm/action-setup@v6

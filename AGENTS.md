@@ -15,24 +15,38 @@ The app has a React SPA (`client/`) and an API server (`server/`). The server re
   - `src/components/ui/`: shadcn/ui components. Add new ones with `pnpm dlx shadcn@latest add <name>` from `client/`.
   - `src/lib/api.ts`: typed API client (Hono RPC). It imports `AppType` from the server.
 - `server/`: Hono API server. All routes are under `/api`.
-  - `src/app.ts`: builds the app. It must not use Node-only APIs, so it can run on serverless runtimes.
+  - `src/app.ts`: `createApp({ db })` builds the app. It must not use Node-only APIs, so it can run on serverless runtimes. Each entry point creates the database client and passes it in, so tests can control it.
   - `src/server.ts`: Node entry point for local development.
+  - `src/db/schema.ts`: Drizzle schema. All tables are in the `where_to_play` Postgres schema.
+  - `src/db/client.ts`: `createDatabase(url)`. Do not create a client at module top level.
+  - `src/db/seed.ts`: sample data. `scripts/seed.ts` runs it, only against localhost.
+  - `drizzle/`: SQL migrations. Generate them with `pnpm db:generate`. Do not edit `drizzle/meta/`.
+  - `src/test/`: test setup. Vitest migrates the test database (`TEST_DATABASE_URL`) before tests run.
+- `docker-compose.yml`: local PostgreSQL 15 on port 54329, with `where_to_play` and `where_to_play_test` databases.
 - `docs/`: architecture notes and decision records (`docs/decisions/`).
 - `.github/workflows/ci.yml`: lint, typecheck, test, and build on each push and PR.
 
-Stack: TypeScript, React 19, Vite, TanStack Router, TanStack Query, Tailwind CSS v4, shadcn/ui, Hono, Vitest, Biome. Package manager: pnpm workspaces.
+Stack: TypeScript, React 19, Vite, TanStack Router, TanStack Query, Tailwind CSS v4, shadcn/ui, Hono, Drizzle ORM, postgres.js, PostgreSQL, Vitest, Biome. Package manager: pnpm workspaces.
 
 ## Key Commands
 
 Run from the repo root:
 
 ```bash
-pnpm install    # install dependencies
-pnpm dev        # client on :5173 and server on :3000, with hot reload
-pnpm build      # production build of the client
-pnpm typecheck  # TypeScript check of all packages
-pnpm test       # Vitest in all packages
-pnpm lint       # Biome lint and format check (use lint:fix to auto-fix)
+pnpm install      # install dependencies
+pnpm db:setup     # start the local database, apply migrations, and load sample data
+pnpm dev          # client on :5173 and server on :3000, with hot reload
+pnpm build        # production build of the client
+pnpm typecheck    # TypeScript check of all packages
+pnpm test         # Vitest in all packages (server tests need the local database)
+pnpm lint         # Biome lint and format check (use lint:fix to auto-fix)
+
+pnpm db:up        # start the local database (Docker)
+pnpm db:down      # stop the local database and keep its data
+pnpm db:reset     # delete the local database, then run db:setup
+pnpm db:generate  # generate a migration from changes to src/db/schema.ts
+pnpm db:migrate   # apply migrations to DATABASE_URL
+pnpm db:seed      # replace all data in DATABASE_URL with sample data (localhost only)
 ```
 
 Run one package's script with `pnpm --filter @where-to-play/<client|server> <script>`.

@@ -12,7 +12,14 @@
     "typecheck": "pnpm --recursive typecheck",
     "test": "pnpm --recursive test",
     "lint": "biome check .",
-    "lint:fix": "biome check --write ."
+    "lint:fix": "biome check --write .",
+    "db:up": "docker compose up -d --wait",
+    "db:down": "docker compose down",
+    "db:setup": "pnpm db:up && pnpm db:migrate && pnpm db:seed",
+    "db:reset": "docker compose down --volumes && pnpm db:setup",
+    "db:generate": "pnpm --filter @where-to-play/server db:generate",
+    "db:migrate": "pnpm --filter @where-to-play/server db:migrate",
+    "db:seed": "pnpm --filter @where-to-play/server db:seed"
   },
   "devDependencies": {
     "@biomejs/biome": "^2.6.6",

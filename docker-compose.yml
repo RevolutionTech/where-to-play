@@ -1,0 +1,23 @@
+name: where-to-play
+
+services:
+  postgres:
+    # Production runs on Supabase with PostgreSQL 15. Keep the major versions the same.
+    image: postgres:15-alpine
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: where_to_play
+    ports:
+      - "54329:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+      - ./docker/postgres/initdb:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d where_to_play"]
+      interval: 2s
+      timeout: 5s
+      retries: 15
+
+volumes:
+  postgres-data:
