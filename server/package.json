@@ -14,11 +14,16 @@
     "test": "vitest run",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",
-    "db:seed": "tsx --env-file-if-exists=.env scripts/seed.ts"
+    "db:seed": "tsx --env-file-if-exists=.env scripts/seed.ts",
+    "import:collections": "tsx --env-file-if-exists=.env scripts/import-collections.ts",
+    "collections:upsert": "tsx --env-file-if-exists=.env scripts/upsert-collections.ts"
   },
   "dependencies": {
     "@hono/node-server": "^2.1.6",
+    "cheerio": "^1.2.0",
     "drizzle-orm": "^0.45.4",
+    "entities": "^8.1.0",
+    "fast-xml-parser": "^5.11.2",
     "hono": "^4.13.16",
     "postgres": "^4.1.0"
   },

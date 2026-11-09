@@ -1,11 +1,13 @@
-import { sql } from "drizzle-orm";
+import { type SQL, sql } from "drizzle-orm";
 import {
   bigint,
+  boolean,
   index,
   integer,
   jsonb,
   pgSchema,
   primaryKey,
+  real,
   smallint,
   text,
   timestamp,
@@ -29,8 +31,26 @@ export const games = whereToPlay.table("games", {
   bggId: integer("bgg_id").unique(),
   name: text("name").notNull(),
   yearPublished: smallint("year_published"),
+  description: text("description"),
+  minPlayers: smallint("min_players"),
+  maxPlayers: smallint("max_players"),
+  minPlaytimeMinutes: integer("min_playtime_minutes"),
+  maxPlaytimeMinutes: integer("max_playtime_minutes"),
+  bggRating: real("bgg_rating"),
+  bggRank: integer("bgg_rank"),
   ...timestamps,
 });
+
+/**
+ * The rule that decides which names count as the same name. Importers must compare names with
+ * this rule in SQL, so that there is only one definition of it.
+ *
+ * Apostrophes are deleted, because sources often leave them out ("Aeons End" for "Aeon's End").
+ * Other punctuation becomes a space, so that "Deck-Building" and "Deck Building" match.
+ */
+export function normalizeGameName(name: SQL) {
+  return sql`btrim(regexp_replace(regexp_replace(lower(${name}), '[''‘’]', '', 'g'), '[^[:alnum:]]+', ' ', 'g'))`;
+}
 
 export const gameNames = whereToPlay.table(
   "game_names",
@@ -44,7 +64,7 @@ export const gameNames = whereToPlay.table(
     nameNormalized: text("name_normalized")
       .notNull()
       .unique()
-      .generatedAlwaysAs(sql`btrim(regexp_replace(lower(name), '[^[:alnum:]]+', ' ', 'g'))`),
+      .generatedAlwaysAs(normalizeGameName(sql.raw("name"))),
   },
   (table) => [
     index("game_names_name_normalized_trgm_idx").using(
@@ -57,7 +77,11 @@ export const gameNames = whereToPlay.table(
   ],
 );
 
-export const collectionKind = whereToPlay.enum("collection_kind", ["cafe", "convention"]);
+export const collectionKind = whereToPlay.enum("collection_kind", [
+  "cafe",
+  "convention",
+  "individual",
+]);
 
 export const sourceKind = whereToPlay.enum("source_kind", [
   "bgg_collection",
@@ -71,17 +95,22 @@ export type ScraperRule = {
   attributes?: Record<string, string | string[]>;
 };
 
-export type SourceConfig =
-  | { username: string }
-  | { url: string; sheetName?: string }
-  | { username: string; libraryId: string }
-  | { url: string; scraperRules: ScraperRule[] };
+export type SourceConfigByKind = {
+  bgg_collection: { username: string };
+  google_sheet: { url: string; sheetName?: string };
+  tabletop_events: { username: string; libraryId: string };
+  web_page: { url: string; scraperRules: ScraperRule[] };
+};
+
+export type SourceConfig = SourceConfigByKind[keyof SourceConfigByKind];
 
 export const collections = whereToPlay.table("collections", {
   id: bigint("id", { mode: "number" }).primaryKey().generatedAlwaysAsIdentity(),
   slug: text("slug").notNull().unique(),
   name: text("name").notNull(),
   kind: collectionKind("kind").notNull(),
+  // The public site must never show a private collection or its name.
+  isPrivate: boolean("is_private").notNull().default(false),
   websiteUrl: text("website_url"),
   bggTag: text("bgg_tag").unique(),
   sourceKind: sourceKind("source_kind").notNull(),
@@ -104,3 +133,22 @@ export const collectionGames = whereToPlay.table(
     index("collection_games_game_id_idx").on(table.gameId),
   ],
 );
+
+export const unmatchedNameStatus = whereToPlay.enum("unmatched_name_status", [
+  // Waiting for a person to match it to a game. Importers search BGG for it again on each run.
+  "pending",
+  // Not a game, for example "Deck of cards". Importers leave it out of collections.
+  "ignored",
+]);
+
+/** Names from collection sources that do not resolve to a game. */
+export const unmatchedNames = whereToPlay.table("unmatched_names", {
+  id: bigint("id", { mode: "number" }).primaryKey().generatedAlwaysAsIdentity(),
+  name: text("name").notNull(),
+  nameNormalized: text("name_normalized")
+    .notNull()
+    .unique()
+    .generatedAlwaysAs(normalizeGameName(sql.raw("name"))),
+  status: unmatchedNameStatus("status").notNull().default("pending"),
+  ...timestamps,
+});

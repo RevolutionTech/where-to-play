@@ -6,3 +6,6 @@ coverage/
 !.env.example
 .DS_Store
 *.log
+
+# Collection lists for scripts/upsert-collections.ts. They can name private individuals.
+collections.*.json

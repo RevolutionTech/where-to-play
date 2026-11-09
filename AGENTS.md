@@ -21,10 +21,14 @@ The app has a React SPA (`client/`) and an API server (`server/`). The server re
   - `src/db/client.ts`: `createDatabase(url)`. Do not create a client at module top level.
   - `src/db/seed.ts`: sample data. `scripts/seed.ts` runs it, only against localhost.
   - `drizzle/`: SQL migrations. Generate them with `pnpm db:generate`. Do not edit `drizzle/meta/`.
+  - `src/importer/`: the collection importer. `sources/` has one fetcher for each `source_kind`. `scripts/import-collections.ts` runs it.
+  - `scripts/import-legacy-data.ts`: one-time import of the legacy tables, from JSON exports.
+  - `scripts/upsert-collections.ts`: makes collections match a JSON list (`pnpm collections:upsert <file>`). Keep lists in `server/collections.*.json`, which git ignores, because private collections name individuals. Never commit names of individuals or their BGG usernames. See `docs/decisions/0004-private-collections.md`.
   - `src/test/`: test setup. Vitest migrates the test database (`TEST_DATABASE_URL`) before tests run.
 - `docker-compose.yml`: local PostgreSQL 15 on port 54329, with `where_to_play` and `where_to_play_test` databases.
 - `docs/`: architecture notes and decision records (`docs/decisions/`).
 - `.github/workflows/ci.yml`: lint, typecheck, test, and build on each push and PR.
+- `.github/workflows/import-collections.yml`: imports all collections into production each week. Run it by hand from the Actions tab for a dry run or for some collections only.
 
 Stack: TypeScript, React 19, Vite, TanStack Router, TanStack Query, Tailwind CSS v4, shadcn/ui, Hono, Drizzle ORM, postgres.js, PostgreSQL, Vitest, Biome. Package manager: pnpm workspaces.
 
@@ -47,6 +51,14 @@ pnpm db:reset     # delete the local database, then run db:setup
 pnpm db:generate  # generate a migration from changes to src/db/schema.ts
 pnpm db:migrate   # apply migrations to DATABASE_URL
 pnpm db:seed      # replace all data in DATABASE_URL with sample data (localhost only)
+```
+
+Run the collection importer from `server/`. It needs the BGG and Google Sheets variables in `server/.env.example`:
+
+```bash
+pnpm import:collections --dry-run                  # show the changes, save nothing
+pnpm import:collections --collection kublacon      # import one collection (repeat for more)
+pnpm import:collections --force                    # import even when a source lost half its games
 ```
 
 Run one package's script with `pnpm --filter @where-to-play/<client|server> <script>`.

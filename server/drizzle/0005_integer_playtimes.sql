@@ -1,0 +1,2 @@
+ALTER TABLE "where_to_play"."games" ALTER COLUMN "min_playtime_minutes" SET DATA TYPE integer;--> statement-breakpoint
+ALTER TABLE "where_to_play"."games" ALTER COLUMN "max_playtime_minutes" SET DATA TYPE integer;
