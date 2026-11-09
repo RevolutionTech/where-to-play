@@ -1,9 +1,9 @@
 import { asc, eq, sql } from "drizzle-orm";
 import { afterAll, beforeEach, describe, expect, it } from "vitest";
+import { BggClient } from "../bgg/client";
 import { createDatabase } from "../db/client";
 import { collectionGames, collections, gameNames, games, unmatchedNames } from "../db/schema";
 import { testDatabaseUrl } from "../test/database";
-import { BggClient } from "./bgg";
 import { applyNameDecisions, listPendingNames } from "./review-unmatched-names";
 
 const db = createDatabase(testDatabaseUrl());

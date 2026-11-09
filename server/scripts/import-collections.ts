@@ -1,8 +1,8 @@
 import { appendFileSync } from "node:fs";
 import { parseArgs } from "node:util";
+import { BggClient } from "../src/bgg/client";
 import { createDatabase } from "../src/db/client";
-import { BggClient } from "../src/importer/bgg";
-import { sleep } from "../src/importer/http";
+import { sleep } from "../src/http";
 import { type CollectionReport, importCollections } from "../src/importer/import-collections";
 
 const { values: args } = parseArgs({

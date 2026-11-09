@@ -23,11 +23,14 @@ The target hosting is a free serverless tier, such as Cloudflare Workers. For th
 - postgres.js runs with prepared statements turned off, so it works through Supabase's transaction pooler.
 - The server keeps no state in memory between requests and runs no background jobs.
 
+## Game Search
+
+The search page and the game page get game data from the BGG API at request time, through the server. The server adds the public collections that own each game from the database. See [0005](decisions/0005-live-bgg-search.md).
+
 ## Collection Importer
 
 A GitHub Actions workflow (`.github/workflows/import-collections.yml`) runs `server/scripts/import-collections.ts` each week. It reads the source of each row in `collections`, matches the games to BGG, updates `collection_games`, and keeps a BGG tag on each game in each collection. It is a separate process, so the server still runs no background jobs. See [0003](decisions/0003-collection-importer.md).
 
 ## Not Yet Built
 
-- Filter and search endpoints and UI.
 - Deployment.

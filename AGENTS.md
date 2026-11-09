@@ -15,7 +15,9 @@ The app has a React SPA (`client/`) and an API server (`server/`). The server re
   - `src/components/ui/`: shadcn/ui components. Add new ones with `pnpm dlx shadcn@latest add <name>` from `client/`.
   - `src/lib/api.ts`: typed API client (Hono RPC). It imports `AppType` from the server.
 - `server/`: Hono API server. All routes are under `/api`.
-  - `src/app.ts`: `createApp({ db })` builds the app. It must not use Node-only APIs, so it can run on serverless runtimes. Each entry point creates the database client and passes it in, so tests can control it.
+  - `src/app.ts`: `createApp({ db, bgg })` builds the app. It must not use Node-only APIs, so it can run on serverless runtimes. Each entry point creates the database client and the BGG client and passes them in, so tests can control them.
+  - `src/games/routes.ts`: game search and game details. They call BGG at request time. See `docs/decisions/0005-live-bgg-search.md`.
+  - `src/bgg/client.ts`: the BGG API client. The server and the importer both use it.
   - `src/server.ts`: Node entry point for local development.
   - `src/db/schema.ts`: Drizzle schema. All tables are in the `where_to_play` Postgres schema.
   - `src/db/client.ts`: `createDatabase(url)`. Do not create a client at module top level.
@@ -53,7 +55,7 @@ pnpm db:migrate   # apply migrations to DATABASE_URL
 pnpm db:seed      # replace all data in DATABASE_URL with sample data (localhost only)
 ```
 
-Run the collection importer from `server/`. It needs the BGG and Google Sheets variables in `server/.env.example`:
+Game search needs `BGG_API_TOKEN` in `server/.env`. Run the collection importer from `server/`. It needs the BGG and Google Sheets variables in `server/.env.example`:
 
 ```bash
 pnpm import:collections --dry-run                  # show the changes, save nothing

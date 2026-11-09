@@ -1,4 +1,4 @@
-import { ensureOk, type Fetch } from "../http";
+import { ensureOk, type Fetch } from "../../http";
 import type { SourceGame } from "./index";
 
 /** Reads game names from the first column, under one header row. */
