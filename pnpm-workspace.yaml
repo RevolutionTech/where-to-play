@@ -1,5 +1,6 @@
 packages:
   - client
   - server
+  - e2e
 allowBuilds:
   esbuild: true

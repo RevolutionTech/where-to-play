@@ -20,7 +20,7 @@ export default defineConfig({
   server: {
     port: 5173,
     strictPort: true,
-    proxy: { "/api": "http://localhost:3000" },
+    proxy: { "/api": process.env.API_PROXY_TARGET ?? "http://localhost:3000" },
   },
   test: {
     environment: "jsdom",

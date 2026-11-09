@@ -25,12 +25,13 @@ The app has a React SPA (`client/`) and an API server (`server/`). The server re
   - `scripts/review-unmatched-names.ts`: lists pending names in `unmatched_names` and saves review decisions. The `unmatched-name-review` skill (`.claude/skills/`) uses it.
   - `scripts/upsert-collections.ts`: makes collections match a JSON list (`pnpm collections:upsert <file>`). Keep lists in `server/collections.*.json`, which git ignores, because private collections name individuals. Never commit names of individuals or their BGG usernames. See `docs/decisions/0004-private-collections.md`.
   - `src/test/`: test setup. Vitest migrates the test database (`TEST_DATABASE_URL`) before tests run.
-- `docker-compose.yml`: local PostgreSQL 17 on port 54329, with `where_to_play` and `where_to_play_test` databases.
+- `e2e/`: Playwright end-to-end tests. See `e2e/README.md` for how to run them and when to add test IDs.
+- `docker-compose.yml`: local PostgreSQL 17 on port 54329, with `where_to_play`, `where_to_play_test`, and `where_to_play_e2e` databases.
 - `docs/`: architecture notes and decision records (`docs/decisions/`).
-- `.github/workflows/ci.yml`: lint, typecheck, test, and build on each push and PR.
+- `.github/workflows/ci.yml`: lint, typecheck, test, build, and E2E tests on each push and PR.
 - `.github/workflows/import-collections.yml`: imports all collections into production each week. Run it by hand from the Actions tab for a dry run or for some collections only.
 
-Stack: TypeScript, React 19, Vite, TanStack Router, TanStack Query, Tailwind CSS v4, shadcn/ui, Hono, Drizzle ORM, postgres.js, PostgreSQL, Vitest, Biome. Package manager: pnpm workspaces.
+Stack: TypeScript, React 19, Vite, TanStack Router, TanStack Query, Tailwind CSS v4, shadcn/ui, Hono, Drizzle ORM, postgres.js, PostgreSQL, Vitest, Playwright, Biome. Package manager: pnpm workspaces.
 
 ## Key Commands
 
@@ -43,6 +44,7 @@ pnpm dev          # client on :5173 and server on :3000, with hot reload
 pnpm build        # production build of the client
 pnpm typecheck    # TypeScript check of all packages
 pnpm test         # Vitest in all packages (server tests need the local database)
+pnpm test:e2e     # Playwright E2E tests (need the local database and Chromium; see e2e/README.md)
 pnpm lint         # Biome lint and format check (use lint:fix to auto-fix)
 
 pnpm db:up        # start the local database (Docker)
