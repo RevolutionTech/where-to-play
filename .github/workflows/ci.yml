@@ -11,7 +11,7 @@ jobs:
     services:
       postgres:
         # Keep in sync with the image in docker-compose.yml.
-        image: postgres:15-alpine
+        image: postgres:17-alpine
         env:
           POSTGRES_USER: postgres
           POSTGRES_PASSWORD: postgres
