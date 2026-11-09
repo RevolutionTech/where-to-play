@@ -11,6 +11,7 @@
     "build": "pnpm --recursive build",
     "typecheck": "pnpm --recursive typecheck",
     "test": "pnpm --recursive test",
+    "test:e2e": "pnpm --filter @where-to-play/e2e test:e2e",
     "lint": "biome check .",
     "lint:fix": "biome check --write .",
     "db:up": "docker compose up -d --wait",

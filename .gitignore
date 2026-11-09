@@ -7,5 +7,10 @@ coverage/
 .DS_Store
 *.log
 
+# Playwright output.
+playwright-report/
+test-results/
+blob-report/
+
 # Collection lists for scripts/upsert-collections.ts. They can name private individuals.
 collections.*.json
