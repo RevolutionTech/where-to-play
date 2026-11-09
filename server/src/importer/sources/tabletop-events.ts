@@ -1,4 +1,4 @@
-import { ensureOk, type Fetch, type Sleep } from "../http";
+import { ensureOk, type Fetch, type Sleep } from "../../http";
 import type { SourceGame } from "./index";
 
 // Tabletop.Events asks API clients to wait 1 second between requests.

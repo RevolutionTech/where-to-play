@@ -1,4 +1,5 @@
 import { asc, eq, inArray, sql, TransactionRollbackError } from "drizzle-orm";
+import type { BggStats, BggThing } from "../bgg/client";
 import type { Database } from "../db/client";
 import {
   collectionGames,
@@ -8,7 +9,6 @@ import {
   normalizeGameName,
   unmatchedNames,
 } from "../db/schema";
-import type { BggStats, BggThing } from "./bgg";
 import { fetchSourceGames, type SourceContext } from "./sources";
 
 export type ImportOptions = {

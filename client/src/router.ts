@@ -13,5 +13,6 @@ declare module "@tanstack/react-router" {
 }
 
 export function createAppQueryClient() {
-  return new QueryClient();
+  // The server already retries BGG, so more retries here only delay the error message.
+  return new QueryClient({ defaultOptions: { queries: { retry: 1 } } });
 }

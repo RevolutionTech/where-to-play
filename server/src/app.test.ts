@@ -1,5 +1,6 @@
 import { afterAll, describe, expect, it } from "vitest";
 import { createApp } from "./app";
+import { BggClient } from "./bgg/client";
 import { createDatabase } from "./db/client";
 import { testDatabaseUrl } from "./test/database";
 
@@ -11,7 +12,7 @@ describe("GET /api/health", () => {
   });
 
   it("reports that the server and the database are up", async () => {
-    const app = createApp({ db });
+    const app = createApp({ db, bgg: new BggClient({ apiToken: "test-token" }) });
 
     const response = await app.request("/api/health");
 
@@ -21,7 +22,7 @@ describe("GET /api/health", () => {
 
   it("reports an error when the database is unreachable", async () => {
     const unreachableDb = createDatabase("postgres://postgres:postgres@localhost:1/none");
-    const app = createApp({ db: unreachableDb });
+    const app = createApp({ db: unreachableDb, bgg: new BggClient({ apiToken: "test-token" }) });
 
     const response = await app.request("/api/health");
 

@@ -1,7 +1,7 @@
 import { and, asc, eq, inArray, sql, TransactionRollbackError } from "drizzle-orm";
+import type { BggClient } from "../bgg/client";
 import type { Database } from "../db/client";
 import { gameNames, games, normalizeGameName, unmatchedNames } from "../db/schema";
-import type { BggClient } from "./bgg";
 import { type DatabaseOrTransaction, saveThings } from "./import-collections";
 
 /** A person's decision about one pending name. */

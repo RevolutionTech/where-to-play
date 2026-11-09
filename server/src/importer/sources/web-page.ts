@@ -1,6 +1,6 @@
 import * as cheerio from "cheerio";
 import type { ScraperRule } from "../../db/schema";
-import { ensureOk, type Fetch } from "../http";
+import { ensureOk, type Fetch } from "../../http";
 import type { SourceGame } from "./index";
 
 // Some sites refuse requests that do not look like they come from a browser.
