@@ -29,6 +29,5 @@ A GitHub Actions workflow (`.github/workflows/import-collections.yml`) runs `ser
 
 ## Not Yet Built
 
-- Migration of data from the legacy project.
 - Filter and search endpoints and UI.
 - Deployment.

@@ -2,7 +2,7 @@ name: Import collections
 
 on:
   schedule:
-    # Mondays at 10:00 UTC.
+    # Mondays at 10:00 UTC: 2:00 AM PST, or 3:00 AM PDT. Cron schedules ignore daylight saving.
     - cron: "0 10 * * 1"
   workflow_dispatch:
     inputs:
