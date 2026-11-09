@@ -32,7 +32,7 @@ export type CollectionReport = {
   /** Games already in the database whose details the source's BGG stats updated. */
   refreshedGameCount: number;
   unmatchedNames: string[];
-  /** BGG IDs that a source gives, but that BGG does not know. */
+  /** BGG IDs that a source gives, but that BGG knows as neither a game nor an accessory. */
   unknownBggIds: number[];
   tagFailures: string[];
 };
@@ -104,8 +104,13 @@ async function importCollection(
 
   const wantedBggIds = [...new Set([...sourceBggIds, ...bggIdBySearchedName.values()])];
   const knownBggIds = new Set((await gameIdsByBggId(db, wantedBggIds)).keys());
-  const newThings = await context.bgg.fetchThings(
+  const fetchedThings = await context.bgg.fetchThings(
     wantedBggIds.filter((bggId) => !knownBggIds.has(bggId)),
+  );
+  // Accessories are not games, so collections leave them out.
+  const newThings = fetchedThings.filter((thing) => !thing.isAccessory);
+  const accessoryBggIds = new Set(
+    fetchedThings.filter((thing) => thing.isAccessory).map((thing) => thing.bggId),
   );
 
   // Phase 2: write everything for this collection in one short transaction.
@@ -142,7 +147,9 @@ async function importCollection(
       }
       await deleteResolvedUnmatchedNames(db);
 
-      report.unknownBggIds = sourceBggIds.filter((bggId) => !gameIdByBggId.has(bggId));
+      report.unknownBggIds = sourceBggIds.filter(
+        (bggId) => !gameIdByBggId.has(bggId) && !accessoryBggIds.has(bggId),
+      );
       const wantedGameIds = new Set([
         ...nameMatches.flatMap((match) => (match.gameId === null ? [] : [match.gameId])),
         ...sourceBggIds.flatMap((bggId) => gameIdByBggId.get(bggId) ?? []),
@@ -266,7 +273,7 @@ async function saveThings(db: DatabaseOrTransaction, things: BggThing[]) {
   if (things.length === 0) return 0;
   const savedGames = await db
     .insert(games)
-    .values(things.map(({ alternateNames: _, ...details }) => details))
+    .values(things.map(({ alternateNames: _, isAccessory: __, ...details }) => details))
     .onConflictDoUpdate({
       target: games.bggId,
       set: {

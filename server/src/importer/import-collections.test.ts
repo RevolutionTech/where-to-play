@@ -107,7 +107,13 @@ function bggSearch(query: string, bggId: number | null): Route {
       : undefined;
 }
 
-type FakeThing = { bggId: number; name: string; alternateNames?: string[]; minPlayers?: number };
+type FakeThing = {
+  bggId: number;
+  name: string;
+  alternateNames?: string[];
+  minPlayers?: number;
+  isAccessory?: boolean;
+};
 
 function bggThings(...things: FakeThing[]): Route {
   return (url) => {
@@ -117,7 +123,7 @@ function bggThings(...things: FakeThing[]): Route {
       .filter((thing) => ids.includes(thing.bggId))
       .map(
         (thing) => `
-          <item type="boardgame" id="${thing.bggId}">
+          <item type="${thing.isAccessory ? "boardgameaccessory" : "boardgame"}" id="${thing.bggId}">
             <name type="primary" sortindex="1" value="${thing.name}"/>
             ${(thing.alternateNames ?? []).map((name) => `<name type="alternate" sortindex="1" value="${name}"/>`).join("")}
             <description>A game about &amp;quot;${thing.name}&amp;quot;.</description>
@@ -467,6 +473,40 @@ describe("importing a Tabletop.Events library", () => {
     expect(report).toMatchObject({ outcome: "imported", sourceGameCount: 2 });
     expect(await gamesIn("kublacon")).toEqual(["Azul", "Catan"]);
     expect(web.requests.some((request) => request.url.pathname === "/xmlapi2/search")).toBe(false);
+  });
+
+  it("leaves out accessories, and reports BGG IDs that BGG does not know", async () => {
+    await addCollection("kublacon", "tabletop_events", {
+      username: "kublacon-library",
+      libraryId: "LIB-1",
+    });
+    const web = fakeWeb(
+      (url) =>
+        url.hostname === "tabletop.events"
+          ? Response.json({
+              result: {
+                items: [
+                  { name: "Catan", bgg_id: 13 },
+                  { name: "Century: Spice Road Playmat", bgg_id: 225260 },
+                  { name: "City Tycoon", bgg_id: 1044994 },
+                ],
+                paging: { next_page_number: 2, total_pages: 1 },
+              },
+            })
+          : undefined,
+      bggThings(
+        { bggId: 13, name: "Catan" },
+        { bggId: 225260, name: "Century: Spice Road – Playmat", isAccessory: true },
+      ),
+      bggLogin,
+      bggAddTag,
+    );
+
+    const [report] = await importWith(web);
+
+    expect(report).toMatchObject({ outcome: "imported", unknownBggIds: [1044994] });
+    expect(await gamesIn("kublacon")).toEqual(["Catan"]);
+    expect(await db.select({ bggId: games.bggId }).from(games)).toEqual([{ bggId: 13 }]);
   });
 });
 
