@@ -17,6 +17,7 @@ A legacy Pipedream workflow imports collections. It fetches each source, matches
 - **A source that shrinks a lot is not trusted.** If a source gives no games, or less than half of the games that the collection has now, the importer skips that collection. The usual cause is a web page or spreadsheet that changed layout. `--force` imports it anyway.
 - **One failing collection does not stop the others.** The run exits with an error at the end if any collection failed.
 - **Unmatched names go in `unmatched_names`.** `pending` names wait for a person to match them, and the importer searches BGG for them again on each run. `ignored` names are not games, and the importer leaves them out of collections.
+- **Accessories are not games.** Some sources list playmats, terrain, and other accessories with a BGG ID. The importer asks BGG for the type of each new ID and leaves accessories out of collections without a report. It still reports IDs that BGG does not know at all.
 - **BGG tags follow `collection_games`.** After the transaction commits, the importer adds the tag to each added game and removes it from each removed game. A tag error does not undo the database change.
 
 ## Consequences

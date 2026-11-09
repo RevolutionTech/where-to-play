@@ -22,6 +22,8 @@ export type BggCollectionItem = { bggId: number; name: string; stats: BggStats }
 
 export type BggThing = BggStats & {
   bggId: number;
+  /** Playmats, terrain, card sleeves and such. Sources list them next to games. */
+  isAccessory: boolean;
   name: string;
   alternateNames: string[];
   description: string | null;
@@ -96,7 +98,7 @@ export class BggClient {
     for (let start = 0; start < bggIds.length; start += THINGS_PER_REQUEST) {
       const url = withParams(`${BGG_URL}/xmlapi2/thing`, {
         id: bggIds.slice(start, start + THINGS_PER_REQUEST).join(","),
-        type: "boardgame,boardgameexpansion",
+        type: "boardgame,boardgameexpansion,boardgameaccessory",
         stats: "1",
       });
       const items = parseItems(await (await this.request(url)).text());
@@ -235,6 +237,7 @@ function toThing(item: XmlItem): BggThing {
 
   return {
     bggId: Number(item.id),
+    isAccessory: item.type === "boardgameaccessory",
     name: names.find((name) => name.type === "primary")?.value ?? "",
     alternateNames: names.flatMap((name) =>
       name.type === "alternate" && name.value ? [name.value] : [],
