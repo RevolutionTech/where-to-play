@@ -2,8 +2,8 @@ name: where-to-play
 
 services:
   postgres:
-    # Production runs on Supabase with PostgreSQL 15. Keep the major versions the same.
-    image: postgres:15-alpine
+    # Production runs on Supabase with PostgreSQL 17. Keep the major versions the same.
+    image: postgres:17-alpine
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres

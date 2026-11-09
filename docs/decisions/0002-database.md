@@ -4,13 +4,13 @@ Status: accepted (2026-11-07)
 
 ## Context
 
-The server needs a database for local development, tests, and CI. Production will be Supabase on the free tier, which runs PostgreSQL 15.
+The server needs a database for local development, tests, and CI. Production will be Supabase on the free tier, which ran PostgreSQL 15 when we chose it. It now runs 17.
 
 Collections of games come from many places: BGG collections, Google Sheets, Tabletop.Events libraries, and web pages. A collection belongs to a cafe or a convention. Later, a collection may belong to an organization that moves its games to different locations. The name `collections` (not `venues`) leaves room for that. A legacy project holds data and importers that a later stage will move into this database.
 
 ## Decision
 
-- **Local database: plain `postgres:15` in Docker Compose.** It matches the production major version, and CI runs the same image as a service. We rejected `supabase start`, because it runs many services that the app does not use and has its own migration system. We rejected Homebrew PostgreSQL, because its version can drift and CI would still need a container.
+- **Local database: plain `postgres:17` in Docker Compose.** It matches the production major version, and CI runs the same image as a service. We rejected `supabase start`, because it runs many services that the app does not use and has its own migration system. We rejected Homebrew PostgreSQL, because its version can drift and CI would still need a container.
 - **Drizzle ORM with postgres.js, prepared statements off.** Supabase's transaction pooler does not support named prepared statements. postgres.js also runs on Cloudflare Workers.
 - **A separate `where_to_play` Postgres schema.** It keeps the app's tables apart from other tables in the database. Supabase does not expose it through its REST API by default.
 - **`pg_trgm` in an `extensions` schema.** Supabase installs extensions there. SQL refers to it by full name, for example `extensions.similarity`, because `extensions` is not always on the `search_path`.
