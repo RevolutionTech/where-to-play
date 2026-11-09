@@ -1,0 +1,56 @@
+name: Import collections
+
+on:
+  schedule:
+    # Mondays at 10:00 UTC: 2:00 AM PST, or 3:00 AM PDT. Cron schedules ignore daylight saving.
+    - cron: "0 10 * * 1"
+  workflow_dispatch:
+    inputs:
+      collections:
+        description: "Slugs to import, separated by spaces. Empty imports all collections."
+        required: false
+        default: ""
+      dry-run:
+        description: "Read sources and BGG, but save nothing."
+        type: boolean
+        default: false
+      force:
+        description: "Import collections even when their source lost more than half of its games."
+        type: boolean
+        default: false
+
+# Two imports at the same time could change the same BGG tags.
+concurrency:
+  group: import-collections
+  cancel-in-progress: false
+
+jobs:
+  import:
+    runs-on: ubuntu-latest
+    timeout-minutes: 180
+    environment: production
+    steps:
+      - uses: actions/checkout@v7
+      - uses: pnpm/action-setup@v6
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Import collections
+        working-directory: server
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          BGG_API_TOKEN: ${{ secrets.BGG_API_TOKEN }}
+          BGG_USERNAME: ${{ secrets.BGG_USERNAME }}
+          BGG_PASSWORD: ${{ secrets.BGG_PASSWORD }}
+          GOOGLE_SHEETS_API_KEY: ${{ secrets.GOOGLE_SHEETS_API_KEY }}
+          COLLECTIONS: ${{ inputs.collections }}
+          DRY_RUN: ${{ inputs.dry-run }}
+          FORCE: ${{ inputs.force }}
+        run: |
+          args=()
+          for slug in $COLLECTIONS; do args+=(--collection "$slug"); done
+          if [ "$DRY_RUN" = "true" ]; then args+=(--dry-run); fi
+          if [ "$FORCE" = "true" ]; then args+=(--force); fi
+          pnpm import:collections "${args[@]}"

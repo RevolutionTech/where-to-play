@@ -23,8 +23,11 @@ The target hosting is a free serverless tier, such as Cloudflare Workers. For th
 - postgres.js runs with prepared statements turned off, so it works through Supabase's transaction pooler.
 - The server keeps no state in memory between requests and runs no background jobs.
 
+## Collection Importer
+
+A GitHub Actions workflow (`.github/workflows/import-collections.yml`) runs `server/scripts/import-collections.ts` each week. It reads the source of each row in `collections`, matches the games to BGG, updates `collection_games`, and keeps a BGG tag on each game in each collection. It is a separate process, so the server still runs no background jobs. See [0003](decisions/0003-collection-importer.md).
+
 ## Not Yet Built
 
-- Importers for collection sources, and migration of data from the legacy project.
 - Filter and search endpoints and UI.
 - Deployment.
