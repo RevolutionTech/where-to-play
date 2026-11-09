@@ -45,6 +45,8 @@ export type BggSearchResult = {
 
 export type BggClientOptions = {
   apiToken: string;
+  /** Defaults to the real BGG. E2E tests point it at a fake BGG. */
+  baseUrl?: string;
   /** Only tag changes need a logged-in session. */
   credentials?: { username: string; password: string };
   fetch?: Fetch;
@@ -82,11 +84,12 @@ export class BggClient {
       maxRetries: 8,
       maxBackoffMs: 60_000,
       ...options,
+      baseUrl: options.baseUrl ?? BGG_URL,
     };
   }
 
   async fetchCollection(username: string): Promise<BggCollectionItem[]> {
-    const url = withParams(`${BGG_URL}/xmlapi2/collection`, {
+    const url = withParams(`${this.options.baseUrl}/xmlapi2/collection`, {
       username,
       own: "1",
       excludesubtype: "boardgameexpansion",
@@ -100,7 +103,7 @@ export class BggClient {
   /** Returns the BGG ID of the first exact match, or null when nothing matches. */
   async search(name: string): Promise<number | null> {
     for (const query of searchQueries(name)) {
-      const url = withParams(`${BGG_URL}/xmlapi2/search`, { ...query, exact: "1" });
+      const url = withParams(`${this.options.baseUrl}/xmlapi2/search`, { ...query, exact: "1" });
       const [firstItem] = parseItems(await (await this.request(url)).text());
       if (firstItem) return Number(firstItem.id);
     }
@@ -109,7 +112,7 @@ export class BggClient {
 
   /** Returns each board game and expansion whose name contains the query, in BGG's order. */
   async searchGames(query: string): Promise<BggSearchResult[]> {
-    const url = withParams(`${BGG_URL}/xmlapi2/search`, {
+    const url = withParams(`${this.options.baseUrl}/xmlapi2/search`, {
       query,
       type: "boardgame,boardgameexpansion",
     });
@@ -135,7 +138,7 @@ export class BggClient {
   async fetchThings(bggIds: number[]): Promise<BggThing[]> {
     const things: BggThing[] = [];
     for (let start = 0; start < bggIds.length; start += THINGS_PER_REQUEST) {
-      const url = withParams(`${BGG_URL}/xmlapi2/thing`, {
+      const url = withParams(`${this.options.baseUrl}/xmlapi2/thing`, {
         id: bggIds.slice(start, start + THINGS_PER_REQUEST).join(","),
         type: "boardgame,boardgameexpansion,boardgameaccessory",
         stats: "1",
@@ -148,7 +151,7 @@ export class BggClient {
 
   async addTag(bggId: number, tag: string) {
     await this.login();
-    await this.request(`${BGG_URL}/api/tags`, {
+    await this.request(`${this.options.baseUrl}/api/tags`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ newtags: tag, objecttype: "thing", objectid: bggId }),
@@ -157,7 +160,7 @@ export class BggClient {
 
   async removeTag(bggId: number, tag: string) {
     await this.login();
-    const url = withParams(`${BGG_URL}/api/tags`, {
+    const url = withParams(`${this.options.baseUrl}/api/tags`, {
       objecttype: "thing",
       objectid: String(bggId),
     });
@@ -165,7 +168,8 @@ export class BggClient {
       mytags: { rawtag: string; pinid: number }[];
     };
     const pin = mytags.find((myTag) => myTag.rawtag === tag);
-    if (pin) await this.request(`${BGG_URL}/api/pins/${pin.pinid}`, { method: "DELETE" });
+    if (pin)
+      await this.request(`${this.options.baseUrl}/api/pins/${pin.pinid}`, { method: "DELETE" });
   }
 
   private async login() {
@@ -173,7 +177,7 @@ export class BggClient {
     const { credentials } = this.options;
     if (!credentials) throw new Error("BGG tag changes need BGG_USERNAME and BGG_PASSWORD.");
     const response = await ensureOk(
-      await this.options.fetch(`${BGG_URL}/login/api/v1`, {
+      await this.options.fetch(`${this.options.baseUrl}/login/api/v1`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ credentials }),

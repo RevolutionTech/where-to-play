@@ -16,6 +16,7 @@ if (!bggApiToken) {
 // A person waits for each request, so give up on a slow BGG quickly.
 const bgg = new BggClient({
   apiToken: bggApiToken,
+  baseUrl: process.env.BGG_BASE_URL || undefined,
   minRequestGapMs: 0,
   maxRetries: 2,
   maxBackoffMs: 1000,

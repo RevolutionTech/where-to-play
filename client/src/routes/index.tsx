@@ -183,7 +183,7 @@ function SearchResults({ search }: { search: GameSearch & { q: string } }) {
       <p className="text-sm text-muted-foreground">{total === 1 ? "1 game" : `${total} games`}</p>
       <ul className="flex flex-col gap-1">
         {results.map((game) => (
-          <li key={game.bggId}>
+          <li key={game.bggId} data-testid={`search-result-${game.bggId}`}>
             <Link
               to="/games/$bggId"
               params={{ bggId: String(game.bggId) }}
