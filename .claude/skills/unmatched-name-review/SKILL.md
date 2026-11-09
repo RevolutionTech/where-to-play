@@ -36,7 +36,7 @@ For each name, decide:
   - An expansion has its own ID. Do not use the base game's ID for it.
   - A name that lists a game with its expansions ("Dominion with most expansions") gets the base game's ID.
 - **`ignore`**: the name is not a board game or an expansion. Examples: playing cards, contest entries, playmats, terrain, miniature sets. Collections leave BGG accessories (`boardgamegeek.com/boardgameaccessory/<id>`) out, so an accessory is also `ignore`.
-- **No decision**: you found no plausible BGG entry, but the item looks like a game. Leave it pending, so the user can add the game by hand later.
+- **No match**: you found no plausible BGG entry, but the item looks like a game. Suggest `ignore`, so the name leaves the queue. The user can choose to leave it pending instead, to add the game by hand later.
 - **Note**: a short flag for anything that the user must check. Examples: two plausible BGG entries, wording that differs from the BGG title, an edition mapped to its base game.
 
 ### Step 3: Show the review table
@@ -48,7 +48,7 @@ Render an HTML widget with `show_widget`. Do not print the table as text too.
 | Name | The exact pending name, in monospace |
 | BGG title | The BGG title, with designer · publisher · player count · year as a muted subtitle |
 | BGG ID | A link to `boardgamegeek.com/boardgame/<id>` or `/boardgameexpansion/<id>` |
-| Notes | A short flag, a red `ignore` badge, or a grey `no match` badge |
+| Notes | A short flag, a red `ignore` badge, or a grey `no match` badge followed by the red `ignore` badge (the suggested decision) |
 
 Style:
 
