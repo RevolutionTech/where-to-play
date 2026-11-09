@@ -1,6 +1,6 @@
+import type { BggClient, BggStats } from "../../bgg/client";
 import type { collections, SourceConfigByKind } from "../../db/schema";
-import type { BggClient, BggStats } from "../bgg";
-import type { Fetch, Sleep } from "../http";
+import type { Fetch, Sleep } from "../../http";
 import { fetchGoogleSheet } from "./google-sheet";
 import { fetchTabletopEventsLibrary } from "./tabletop-events";
 import { fetchWebPage } from "./web-page";

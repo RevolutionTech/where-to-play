@@ -1,11 +1,15 @@
 import { decodeHTML } from "entities";
 import { XMLParser } from "fast-xml-parser";
-import { ensureOk, type Fetch, redactUrl, type Sleep, sleep } from "./http";
+import { ensureOk, type Fetch, redactUrl, type Sleep, sleep } from "../http";
 
 const BGG_URL = "https://boardgamegeek.com";
 
-// The BGG thing API returns at most 20 items for each request.
-const THINGS_PER_REQUEST = 20;
+/** The BGG thing API returns at most this many items for each request. */
+export const THINGS_PER_REQUEST = 20;
+
+export function bggGameUrl(bggId: number) {
+  return `${BGG_URL}/boardgame/${bggId}`;
+}
 
 /** Game details that both the collection API and the thing API give. */
 export type BggStats = {
@@ -27,6 +31,16 @@ export type BggThing = BggStats & {
   name: string;
   alternateNames: string[];
   description: string | null;
+  thumbnailUrl: string | null;
+  imageUrl: string | null;
+};
+
+export type BggSearchResult = {
+  bggId: number;
+  /** The name that matched the query. It can be an alternate name of the game. */
+  name: string;
+  yearPublished: number | null;
+  isExpansion: boolean;
 };
 
 export type BggClientOptions = {
@@ -93,6 +107,31 @@ export class BggClient {
     return null;
   }
 
+  /** Returns each board game and expansion whose name contains the query, in BGG's order. */
+  async searchGames(query: string): Promise<BggSearchResult[]> {
+    const url = withParams(`${BGG_URL}/xmlapi2/search`, {
+      query,
+      type: "boardgame,boardgameexpansion",
+    });
+    const items = parseItems(await (await this.request(url)).text());
+    // BGG lists each expansion twice: once as a board game, and once as an expansion.
+    const expansionIds = new Set(
+      items.filter((item) => item.type === "boardgameexpansion").map((item) => Number(item.id)),
+    );
+    const results = new Map<number, BggSearchResult>();
+    for (const item of items) {
+      const bggId = Number(item.id);
+      if (results.has(bggId)) continue;
+      results.set(bggId, {
+        bggId,
+        name: asArray(item.name as XmlAttributes[] | undefined)[0]?.value ?? "",
+        yearPublished: numberAttribute(item.yearpublished),
+        isExpansion: expansionIds.has(bggId),
+      });
+    }
+    return [...results.values()];
+  }
+
   async fetchThings(bggIds: number[]): Promise<BggThing[]> {
     const things: BggThing[] = [];
     for (let start = 0; start < bggIds.length; start += THINGS_PER_REQUEST) {
@@ -146,7 +185,7 @@ export class BggClient {
   }
 
   private async request(url: string, init: RequestInit = {}): Promise<Response> {
-    let backoffMs = 2000;
+    let backoffMs = Math.min(2000, this.options.maxBackoffMs);
     for (let retry = 0; ; retry++) {
       const gapLeftMs = this.lastRequestAt + this.options.minRequestGapMs - Date.now();
       if (gapLeftMs > 0) await this.options.sleep(gapLeftMs);
@@ -244,6 +283,8 @@ function toThing(item: XmlItem): BggThing {
     ),
     // BGG escapes HTML in descriptions twice, so one pass of the XML parser leaves entities.
     description: description ? decodeHTML(description) : null,
+    thumbnailUrl: textOf(item.thumbnail)?.trim() || null,
+    imageUrl: textOf(item.image)?.trim() || null,
     yearPublished: numberAttribute(item.yearpublished),
     minPlayers: numberAttribute(item.minplayers),
     maxPlayers: numberAttribute(item.maxplayers),
