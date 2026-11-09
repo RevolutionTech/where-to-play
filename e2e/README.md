@@ -16,6 +16,8 @@ The tests use their own database, `where_to_play_e2e`. Before the tests run, the
 
 Playwright starts the server on port 3100 and the client on port 5273. These ports differ from `pnpm dev`, so the tests never use the dev database.
 
+The server does not call the real BoardGameGeek (BGG). Playwright starts a fake BGG on port 3101 (`fake-bgg.ts`), and the server sends its BGG requests there. The fake knows only the games in its `catalog`. When a test needs another game, add it there. To give the game collections, use a `bggId` that `server/src/db/seed.ts` also uses.
+
 If your local database volume is older than this package, it has no `where_to_play_e2e` database. Run `pnpm db:reset`, or create the database by hand:
 
 ```bash

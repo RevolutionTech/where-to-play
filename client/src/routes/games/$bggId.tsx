@@ -130,7 +130,11 @@ function GameDetails({ game }: { game: GameDetailsResponse }) {
           ) : (
             <ul className="flex flex-col gap-3">
               {game.collections.map((collection) => (
-                <li key={collection.slug} className="flex flex-wrap items-center gap-2">
+                <li
+                  key={collection.slug}
+                  data-testid={`collection-${collection.slug}`}
+                  className="flex flex-wrap items-center gap-2"
+                >
                   {collection.websiteUrl ? (
                     <a
                       href={collection.websiteUrl}
