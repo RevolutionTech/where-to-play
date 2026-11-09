@@ -40,7 +40,7 @@ export type CollectionReport = {
 type Collection = typeof collections.$inferSelect;
 
 type Transaction = Parameters<Parameters<Database["transaction"]>[0]>[0];
-type DatabaseOrTransaction = Database | Transaction;
+export type DatabaseOrTransaction = Database | Transaction;
 
 // A source with less than this share of the collection's current games is probably broken.
 const MIN_SHARE_OF_CURRENT_GAMES = 0.5;
@@ -269,7 +269,7 @@ async function bggIdsOf(db: DatabaseOrTransaction, gameIds: number[]) {
 }
 
 /** Returns the number of games that were not in the database before. */
-async function saveThings(db: DatabaseOrTransaction, things: BggThing[]) {
+export async function saveThings(db: DatabaseOrTransaction, things: BggThing[]) {
   if (things.length === 0) return 0;
   const savedGames = await db
     .insert(games)
