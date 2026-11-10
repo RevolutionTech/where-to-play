@@ -52,8 +52,11 @@ function GameSearchPage() {
 
   return (
     <main className="mx-auto flex max-w-3xl flex-col gap-6 px-4 py-10">
-      <header className="flex flex-col gap-2 text-center">
-        <h1 className="text-4xl font-bold tracking-tight sm:text-5xl">Where to Play</h1>
+      <header className="flex flex-col items-center gap-2 text-center">
+        <img src="/logo.png" alt="" className="size-24 sm:size-28" />
+        <h1 className="text-4xl font-bold tracking-tight text-brand-navy sm:text-5xl">
+          Where to Play
+        </h1>
         <p className="text-muted-foreground">
           Find a board game, then see the cafes and conventions that have it.
         </p>
@@ -61,7 +64,7 @@ function GameSearchPage() {
 
       <div className="flex flex-col gap-4">
         <div className="relative">
-          <Search className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
+          <Search className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-brand-teal" />
           <Input
             type="search"
             aria-label="Search for a board game"
@@ -187,7 +190,7 @@ function SearchResults({ search }: { search: GameSearch & { q: string } }) {
             <Link
               to="/games/$bggId"
               params={{ bggId: String(game.bggId) }}
-              className="flex items-center gap-4 rounded-lg p-2 hover:bg-muted focus-visible:bg-muted focus-visible:outline-none"
+              className="flex items-center gap-4 rounded-lg p-2 hover:bg-accent focus-visible:bg-accent focus-visible:outline-none"
             >
               <Thumbnail url={game.thumbnailUrl} />
               <div className="flex min-w-0 flex-1 flex-col gap-1">
