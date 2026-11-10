@@ -112,4 +112,13 @@ describe("game search page", () => {
     expect(await screen.findByRole("heading", { name: "Where to Play" })).toBeInTheDocument();
     expect(requests).toEqual([]);
   });
+
+  it("credits BoardGameGeek with a link to it", async () => {
+    stubApi(() => searchResponse([]));
+
+    renderApp("/");
+
+    const credit = await screen.findByRole("link", { name: "Powered by BGG" });
+    expect(credit).toHaveAttribute("href", "https://boardgamegeek.com");
+  });
 });

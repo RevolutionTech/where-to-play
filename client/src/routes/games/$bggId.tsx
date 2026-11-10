@@ -1,7 +1,17 @@
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import type { InferResponseType } from "hono/client";
-import { ArrowLeft, Clock, ExternalLink, Star, Trophy, Users } from "lucide-react";
+import {
+  Clock,
+  Coffee,
+  ExternalLink,
+  House,
+  type LucideIcon,
+  Star,
+  Ticket,
+  Trophy,
+  Users,
+} from "lucide-react";
 import type { ReactNode } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -14,10 +24,23 @@ export const Route = createFileRoute("/games/$bggId")({
 
 class GameNotFoundError extends Error {}
 
-const collectionKindLabels: Record<GameDetailsResponse["collections"][number]["kind"], string> = {
-  cafe: "Cafe",
-  convention: "Convention",
-  individual: "Personal collection",
+type CollectionKind = GameDetailsResponse["collections"][number]["kind"];
+
+const collectionKinds: Record<
+  CollectionKind,
+  { label: string; icon: LucideIcon; badgeClassName: string }
+> = {
+  cafe: { label: "Cafe", icon: Coffee, badgeClassName: "bg-cafe text-cafe-foreground" },
+  convention: {
+    label: "Convention",
+    icon: Ticket,
+    badgeClassName: "bg-convention text-convention-foreground",
+  },
+  individual: {
+    label: "Personal collection",
+    icon: House,
+    badgeClassName: "bg-individual text-individual-foreground",
+  },
 };
 
 function GameDetailsPage() {
@@ -38,10 +61,10 @@ function GameDetailsPage() {
     <main className="mx-auto flex max-w-3xl flex-col gap-6 px-4 py-10">
       <Link
         to="/"
-        className="flex w-fit items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
+        className="flex w-fit items-center gap-2 text-lg font-bold tracking-tight text-brand-navy"
       >
-        <ArrowLeft className="size-4" />
-        Search for another game
+        <img src="/logo.png" alt="" className="size-9" />
+        Where to Play
       </Link>
       {game.isPending ? (
         <div className="flex flex-col gap-4" role="status" aria-label="Loading game">
@@ -110,7 +133,7 @@ function GameDetails({ game }: { game: GameDetailsResponse }) {
             href={game.bggUrl}
             target="_blank"
             rel="noreferrer"
-            className="flex w-fit items-center gap-1 text-sm font-medium underline-offset-4 hover:underline"
+            className="flex w-fit items-center gap-1 text-sm font-medium text-primary underline-offset-4 hover:underline"
           >
             View on BoardGameGeek
             <ExternalLink className="size-4" />
@@ -147,7 +170,7 @@ function GameDetails({ game }: { game: GameDetailsResponse }) {
                   ) : (
                     <span className="font-medium">{collection.name}</span>
                   )}
-                  <Badge variant="secondary">{collectionKindLabels[collection.kind]}</Badge>
+                  <CollectionKindBadge kind={collection.kind} />
                 </li>
               ))}
             </ul>
@@ -165,10 +188,20 @@ function GameDetails({ game }: { game: GameDetailsResponse }) {
   );
 }
 
+function CollectionKindBadge({ kind }: { kind: CollectionKind }) {
+  const { label, icon: Icon, badgeClassName } = collectionKinds[kind];
+  return (
+    <Badge className={badgeClassName}>
+      <Icon aria-hidden />
+      {label}
+    </Badge>
+  );
+}
+
 function Fact(props: { icon: ReactNode; label: string; children: ReactNode }) {
   return (
     <div className="flex items-center gap-1.5">
-      <span className="text-muted-foreground [&>svg]:size-4" aria-hidden>
+      <span className="text-brand-teal [&>svg]:size-4" aria-hidden>
         {props.icon}
       </span>
       <dt className="sr-only">{props.label}</dt>

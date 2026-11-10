@@ -6,6 +6,14 @@
 @custom-variant dark (&:is(.dark *));
 
 @theme inline {
+  --color-brand-teal: var(--brand-teal);
+  --color-brand-navy: var(--brand-navy);
+  --color-cafe: var(--cafe);
+  --color-cafe-foreground: var(--cafe-foreground);
+  --color-convention: var(--convention);
+  --color-convention-foreground: var(--convention-foreground);
+  --color-individual: var(--individual);
+  --color-individual-foreground: var(--individual-foreground);
   --font-heading: var(--font-sans);
   --font-sans: "Geist Variable", sans-serif;
   --color-sidebar-ring: var(--sidebar-ring);
@@ -49,24 +57,33 @@
 }
 
 :root {
+  /* Sampled from the logo: the pin and the meeple. */
+  --brand-teal: oklch(0.728 0.097 181.6);
+  --brand-navy: oklch(0.484 0.097 243);
+  --cafe: oklch(0.95 0.05 75);
+  --cafe-foreground: oklch(0.45 0.1 60);
+  --convention: oklch(0.95 0.035 181.6);
+  --convention-foreground: oklch(0.42 0.075 181.6);
+  --individual: oklch(0.94 0.03 243);
+  --individual-foreground: oklch(0.42 0.09 243);
   --background: oklch(1 0 0);
   --foreground: oklch(0.145 0 0);
   --card: oklch(1 0 0);
   --card-foreground: oklch(0.145 0 0);
   --popover: oklch(1 0 0);
   --popover-foreground: oklch(0.145 0 0);
-  --primary: oklch(0.205 0 0);
+  --primary: var(--brand-navy);
   --primary-foreground: oklch(0.985 0 0);
-  --secondary: oklch(0.97 0 0);
+  --secondary: oklch(0.97 0.008 220);
   --secondary-foreground: oklch(0.205 0 0);
-  --muted: oklch(0.97 0 0);
+  --muted: oklch(0.97 0.008 220);
   --muted-foreground: oklch(0.556 0 0);
-  --accent: oklch(0.97 0 0);
-  --accent-foreground: oklch(0.205 0 0);
+  --accent: oklch(0.96 0.025 181.6);
+  --accent-foreground: oklch(0.38 0.07 181.6);
   --destructive: oklch(0.577 0.245 27.325);
   --border: oklch(0.922 0 0);
   --input: oklch(0.922 0 0);
-  --ring: oklch(0.708 0 0);
+  --ring: var(--brand-teal);
   --chart-1: oklch(0.87 0 0);
   --chart-2: oklch(0.556 0 0);
   --chart-3: oklch(0.439 0 0);
@@ -84,6 +101,12 @@
 }
 
 .dark {
+  --cafe: oklch(0.32 0.06 60);
+  --cafe-foreground: oklch(0.9 0.08 75);
+  --convention: oklch(0.32 0.05 181.6);
+  --convention-foreground: oklch(0.9 0.06 181.6);
+  --individual: oklch(0.32 0.06 243);
+  --individual-foreground: oklch(0.9 0.05 243);
   --background: oklch(0.145 0 0);
   --foreground: oklch(0.985 0 0);
   --card: oklch(0.205 0 0);
