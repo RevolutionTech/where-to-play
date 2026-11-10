@@ -1,0 +1,1 @@
+ALTER TABLE "where_to_play"."collections" ADD COLUMN "location" text;

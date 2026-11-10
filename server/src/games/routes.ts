@@ -127,6 +127,7 @@ export function createGamesRoutes({ db, bgg }: GamesDependencies) {
               name: collections.name,
               kind: collections.kind,
               websiteUrl: collections.websiteUrl,
+              location: collections.location,
             })
             .from(collectionGames)
             .innerJoin(collections, eq(collections.id, collectionGames.collectionId))

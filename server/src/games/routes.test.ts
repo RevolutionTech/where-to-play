@@ -101,7 +101,7 @@ async function searchBody(response: Response) {
 
 async function addCollection(
   name: string,
-  options: { isPrivate?: boolean; websiteUrl?: string } = {},
+  options: { isPrivate?: boolean; websiteUrl?: string; location?: string } = {},
 ) {
   const slug = name.toLowerCase().replaceAll(" ", "-");
   const [collection] = await db
@@ -112,6 +112,7 @@ async function addCollection(
       kind: "cafe",
       isPrivate: options.isPrivate ?? false,
       websiteUrl: options.websiteUrl,
+      location: options.location,
       sourceKind: "bgg_collection",
       sourceConfig: { username: slug },
     })
@@ -273,6 +274,7 @@ describe("GET /api/games/:bggId", () => {
   it("gives BGG details and the public collections that own the game", async () => {
     const parlour = await addCollection("The Game Parlour", {
       websiteUrl: "https://gameparlour.example",
+      location: "San Francisco, CA",
     });
     const kublacon = await addCollection("KublaCon");
     const privateShelf = await addCollection("Private Shelf", { isPrivate: true });
@@ -297,12 +299,13 @@ describe("GET /api/games/:bggId", () => {
       imageUrl: "https://cf.geekdo-images.com/13.jpg",
       bggUrl: "https://boardgamegeek.com/boardgame/13",
       collections: [
-        { slug: "kublacon", name: "KublaCon", kind: "cafe", websiteUrl: null },
+        { slug: "kublacon", name: "KublaCon", kind: "cafe", websiteUrl: null, location: null },
         {
           slug: "the-game-parlour",
           name: "The Game Parlour",
           kind: "cafe",
           websiteUrl: "https://gameparlour.example",
+          location: "San Francisco, CA",
         },
       ],
     });

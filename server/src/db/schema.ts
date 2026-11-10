@@ -112,6 +112,8 @@ export const collections = whereToPlay.table("collections", {
   // The public site must never show a private collection or its name.
   isPrivate: boolean("is_private").notNull().default(false),
   websiteUrl: text("website_url"),
+  // Free text for people to read, for example "Oakland, CA". It is not parsed or filtered.
+  location: text("location"),
   bggTag: text("bgg_tag").unique(),
   sourceKind: sourceKind("source_kind").notNull(),
   sourceConfig: jsonb("source_config").$type<SourceConfig>().notNull(),
