@@ -20,12 +20,13 @@ const catan = {
   imageUrl: "https://cf.geekdo-images.com/13.jpg",
   bggUrl: "https://boardgamegeek.com/boardgame/13",
   collections: [
-    { slug: "kublacon", name: "KublaCon", kind: "convention", websiteUrl: null },
+    { slug: "kublacon", name: "KublaCon", kind: "convention", websiteUrl: null, location: null },
     {
       slug: "the-game-parlour",
       name: "The Game Parlour",
       kind: "cafe",
       websiteUrl: "https://gameparlour.example",
+      location: "San Francisco, CA",
     },
   ],
 };
@@ -55,7 +56,7 @@ describe("game details page", () => {
     const items = within(collectionList).getAllByRole("listitem");
     expect(items.map((item) => item.textContent)).toEqual([
       "KublaConConvention",
-      "The Game ParlourCafe",
+      "The Game ParlourCafeSan Francisco, CA",
     ]);
     expect(within(collectionList).getByRole("link", { name: "The Game Parlour" })).toHaveAttribute(
       "href",

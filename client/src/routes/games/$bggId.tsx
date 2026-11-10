@@ -171,6 +171,9 @@ function GameDetails({ game }: { game: GameDetailsResponse }) {
                     <span className="font-medium">{collection.name}</span>
                   )}
                   <CollectionKindBadge kind={collection.kind} />
+                  {collection.location ? (
+                    <span className="text-sm text-muted-foreground">{collection.location}</span>
+                  ) : null}
                 </li>
               ))}
             </ul>

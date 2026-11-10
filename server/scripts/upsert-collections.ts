@@ -27,6 +27,7 @@ try {
         kind: sql`excluded.kind`,
         isPrivate: sql`excluded.is_private`,
         websiteUrl: sql`excluded.website_url`,
+        location: sql`excluded.location`,
         bggTag: sql`excluded.bgg_tag`,
         sourceKind: sql`excluded.source_kind`,
         sourceConfig: sql`excluded.source_config`,

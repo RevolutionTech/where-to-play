@@ -31,6 +31,7 @@ const sampleCollections: SampleCollection[] = [
     slug: "the-game-parlour",
     name: "The Game Parlour",
     kind: "cafe",
+    location: "San Francisco, CA",
     bggTag: "Collection:-The-Game-Parlour",
     sourceKind: "bgg_collection",
     sourceConfig: { username: "Thegameparlour" },
@@ -40,6 +41,7 @@ const sampleCollections: SampleCollection[] = [
     slug: "kublacon",
     name: "KublaCon",
     kind: "convention",
+    location: "Burlingame, CA",
     bggTag: "Collection:-KublaCon",
     sourceKind: "tabletop_events",
     sourceConfig: {
@@ -53,6 +55,7 @@ const sampleCollections: SampleCollection[] = [
     name: "Adventurers Guild",
     kind: "cafe",
     websiteUrl: "https://www.adventurersguildcafe.com",
+    location: "Kitchener, ON, Canada",
     bggTag: "Collection:-Adventurers-Guild",
     sourceKind: "web_page",
     sourceConfig: {

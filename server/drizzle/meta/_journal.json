@@ -43,6 +43,13 @@
       "when": 1794188949010,
       "tag": "0005_integer_playtimes",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1794295997471,
+      "tag": "0006_collection_location",
+      "breakpoints": true
     }
   ]
 }
