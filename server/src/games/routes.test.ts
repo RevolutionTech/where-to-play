@@ -101,7 +101,7 @@ function fakeBgg(catalog: FakeBggGame[], options: { down?: boolean } = {}) {
 type SearchBody = {
   total: number;
   page: number;
-  results: { bggId: number; name: string }[];
+  results: { bggId: number; name: string; placeCount: number }[];
 };
 
 async function searchBody(response: Response) {
@@ -164,7 +164,7 @@ describe("GET /api/games", () => {
           yearPublished: 1995,
           isExpansion: false,
           thumbnailUrl: "https://cf.geekdo-images.com/13-thumb.jpg",
-          collectionCount: 0,
+          placeCount: 0,
         },
         expect.objectContaining({ bggId: 2807, name: "Catan Junior" }),
         expect.objectContaining({ bggId: 27710, name: "Catan Dice Game" }),
@@ -207,9 +207,55 @@ describe("GET /api/games", () => {
     const response = await app.request("/api/games?q=catan");
 
     expect((await searchBody(response)).results).toEqual([
-      expect.objectContaining({ bggId: 13, collectionCount: 2 }),
-      expect.objectContaining({ bggId: 2807, collectionCount: 0 }),
+      expect.objectContaining({ bggId: 13, placeCount: 2 }),
+      expect.objectContaining({ bggId: 2807, placeCount: 0 }),
     ]);
+  });
+
+  it("counts digital implementations as places", async () => {
+    const parlour = await addCollection("The Game Parlour");
+    await addGame({ name: "Catan", bggId: 13 }, [parlour]);
+    const { bgg } = fakeBgg([
+      {
+        bggId: 13,
+        name: "Catan",
+        yearPublished: 1995,
+        families: ["Digital Implementations: Board Game Arena", "Digital Implementations: Steam"],
+      },
+      {
+        bggId: 2807,
+        name: "Catan Junior",
+        yearPublished: 2011,
+        families: ["Digital Implementations: Steam"],
+      },
+    ]);
+    const app = createApp({ db, bgg });
+
+    const response = await app.request("/api/games?q=catan");
+
+    expect((await searchBody(response)).results).toEqual([
+      expect.objectContaining({ bggId: 13, placeCount: 3 }),
+      expect.objectContaining({ bggId: 2807, placeCount: 1 }),
+    ]);
+  });
+
+  it("leaves out games that only have digital implementations when available is set", async () => {
+    const parlour = await addCollection("The Game Parlour");
+    await addGame({ name: "Catan", bggId: 13 }, [parlour]);
+    const { bgg } = fakeBgg([
+      { bggId: 13, name: "Catan", yearPublished: 1995 },
+      {
+        bggId: 2807,
+        name: "Catan Junior",
+        yearPublished: 2011,
+        families: ["Digital Implementations: Steam"],
+      },
+    ]);
+    const app = createApp({ db, bgg });
+
+    const response = await app.request("/api/games?q=catan&available=true");
+
+    expect((await searchBody(response)).results).toEqual([expect.objectContaining({ bggId: 13 })]);
   });
 
   it("shows only games that a public collection owns when available is set", async () => {
