@@ -84,6 +84,7 @@ export const collectionKind = whereToPlay.enum("collection_kind", [
 ]);
 
 export const sourceKind = whereToPlay.enum("source_kind", [
+  "airtable_shared_page",
   "bgg_collection",
   "cardboard_connect",
   "google_sheet",
@@ -97,6 +98,8 @@ export type ScraperRule = {
 };
 
 export type SourceConfigByKind = {
+  // The link to a shared Airtable Interface page, or its embed link.
+  airtable_shared_page: { url: string };
   bgg_collection: { username: string };
   cardboard_connect: { instanceId: string };
   google_sheet: { url: string; sheetName?: string };
