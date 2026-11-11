@@ -13,7 +13,7 @@ function game(bggId: number, name: string, extra: Record<string, unknown> = {}) 
     yearPublished: 1995,
     isExpansion: false,
     thumbnailUrl: `https://cf.geekdo-images.com/${bggId}-thumb.jpg`,
-    collectionCount: 0,
+    placeCount: 0,
     ...extra,
   };
 }
@@ -26,7 +26,7 @@ describe("game search page", () => {
   it("searches as the user types, and lists each game with a thumbnail", async () => {
     const requests = stubApi(() =>
       searchResponse([
-        game(13, "Catan", { collectionCount: 2 }),
+        game(13, "Catan", { placeCount: 2 }),
         game(2807, "Catan Junior", { yearPublished: 2011 }),
       ]),
     );
@@ -56,7 +56,7 @@ describe("game search page", () => {
 
     expect(await screen.findByRole("link", { name: /^Catan/ })).toBeInTheDocument();
     expect(screen.getByRole("searchbox")).toHaveValue("catan");
-    expect(screen.getByRole("switch", { name: "Only games I can play somewhere" })).toBeChecked();
+    expect(screen.getByRole("switch", { name: "Only games in a collection" })).toBeChecked();
     expect(requests[0]?.searchParams.get("available")).toBe("true");
   });
 
