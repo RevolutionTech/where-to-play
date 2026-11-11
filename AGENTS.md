@@ -19,6 +19,7 @@ The app has a React SPA (`client/`) and an API server (`server/`). The server re
   - `src/games/routes.ts`: game search and game details. They call BGG at request time. See `docs/decisions/0005-live-bgg-search.md`.
   - `src/bgg/client.ts`: the BGG API client. The server and the importer both use it.
   - `src/server.ts`: Node entry point for local development.
+  - `src/vercel.ts`: entry point for the Vercel function. `pnpm build` bundles it into `dist/vercel.js`, and the root `api/index.js` loads that bundle.
   - `src/db/schema.ts`: Drizzle schema. All tables are in the `where_to_play` Postgres schema.
   - `src/db/client.ts`: `createDatabase(url)`. Do not create a client at module top level.
   - `src/db/seed.ts`: sample data. `scripts/seed.ts` runs it, only against localhost.
@@ -32,6 +33,9 @@ The app has a React SPA (`client/`) and an API server (`server/`). The server re
 - `docs/`: architecture notes and decision records (`docs/decisions/`).
 - `.github/workflows/ci.yml`: lint, typecheck, test, build, and E2E tests on each push and PR.
 - `.github/workflows/import-collections.yml`: imports all collections into production each week. Run it by hand from the Actions tab for a dry run or for some collections only.
+- `.github/workflows/deploy.yml`: after CI passes on `main`, migrates the production database and deploys to Vercel.
+- `.github/workflows/health-check.yml`: calls `/api/health` in production each day.
+- `vercel.json`: Vercel build and routing settings. See `docs/deployment.md` for the one-time setup.
 
 Stack: TypeScript, React 19, Vite, TanStack Router, TanStack Query, Tailwind CSS v4, shadcn/ui, Hono, Drizzle ORM, postgres.js, PostgreSQL, Vitest, Playwright, Biome. Package manager: pnpm workspaces.
 
@@ -43,7 +47,7 @@ Run from the repo root:
 pnpm install      # install dependencies
 pnpm db:setup     # start the local database, apply migrations, and load sample data
 pnpm dev          # client on :5173 and server on :3000, with hot reload
-pnpm build        # production build of the client
+pnpm build        # production build of the client, and the server bundle for Vercel
 pnpm typecheck    # TypeScript check of all packages
 pnpm test         # Vitest in all packages (server tests need the local database)
 pnpm test:e2e     # Playwright E2E tests (need the local database and Chromium; see e2e/README.md)

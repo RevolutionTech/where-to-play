@@ -1,0 +1,16 @@
+name: Health check
+
+on:
+  schedule:
+    # Daily. Supabase pauses a free project after a week with too little database activity.
+    - cron: "0 15 * * *"
+  workflow_dispatch:
+
+jobs:
+  health-check:
+    runs-on: ubuntu-latest
+    steps:
+      # /api/health queries the database, so one request checks the site and keeps Supabase active.
+      - run: curl --fail --silent --show-error --retry 3 --retry-all-errors "$PRODUCTION_URL/api/health"
+        env:
+          PRODUCTION_URL: ${{ vars.PRODUCTION_URL }}
