@@ -9,11 +9,17 @@ type FakeGame = {
   name: string;
   yearPublished: number;
   isExpansion?: boolean;
+  families?: string[];
 };
 
 // Games with a bggId from server/src/db/seed.ts get their collections from the E2E database.
 const catalog: FakeGame[] = [
-  { bggId: 13, name: "Catan", yearPublished: 1995 },
+  {
+    bggId: 13,
+    name: "Catan",
+    yearPublished: 1995,
+    families: ["Animals: Sheep", "Digital Implementations: Board Game Arena"],
+  },
   { bggId: 325, name: "Catan: Seafarers", yearPublished: 1997, isExpansion: true },
   { bggId: 2807, name: "Catan Junior", yearPublished: 2011 },
 ];
@@ -49,6 +55,12 @@ function thingXml(bggIds: number[]) {
           <maxplayers value="4"/>
           <minplaytime value="30"/>
           <maxplaytime value="60"/>
+          ${(game.families ?? [])
+            .map(
+              (family, index) =>
+                `<link type="boardgamefamily" id="${index + 1}" value="${family}"/>`,
+            )
+            .join("")}
           <statistics page="1"><ratings>
             <average value="7.5"/>
             <ranks><rank type="subtype" id="1" name="boardgame" value="100"/></ranks>

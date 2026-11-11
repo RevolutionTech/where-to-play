@@ -60,4 +60,8 @@ test("a game page lists the places that have the game", async ({ page }) => {
   await expect(page.getByTestId("collection-kublacon")).toContainText("KublaCon");
   await expect(page.getByTestId("collection-the-game-parlour")).toContainText("The Game Parlour");
   await expect(page.getByTestId("collection-adventurers-guild")).toHaveCount(0);
+  await expect(page.getByRole("link", { name: "Board Game Arena" })).toHaveAttribute(
+    "href",
+    "https://boardgamearena.com/",
+  );
 });

@@ -7,6 +7,7 @@ import {
   ExternalLink,
   House,
   type LucideIcon,
+  Monitor,
   Star,
   Ticket,
   Trophy,
@@ -17,6 +18,7 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { apiClient } from "@/lib/api";
+import { digitalPlatformUrl } from "@/lib/digital-platforms";
 
 export const Route = createFileRoute("/games/$bggId")({
   component: GameDetailsPage,
@@ -148,7 +150,7 @@ function GameDetails({ game }: { game: GameDetailsResponse }) {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          {game.collections.length === 0 ? (
+          {game.collections.length === 0 && game.digitalImplementations.length === 0 ? (
             <p className="text-muted-foreground">No collections that we know of have this game.</p>
           ) : (
             <ul className="flex flex-col gap-3">
@@ -176,6 +178,9 @@ function GameDetails({ game }: { game: GameDetailsResponse }) {
                   ) : null}
                 </li>
               ))}
+              {game.digitalImplementations.map((platform) => (
+                <DigitalImplementation key={platform} platform={platform} />
+              ))}
             </ul>
           )}
         </CardContent>
@@ -188,6 +193,30 @@ function GameDetails({ game }: { game: GameDetailsResponse }) {
         </section>
       ) : null}
     </article>
+  );
+}
+
+function DigitalImplementation({ platform }: { platform: string }) {
+  const url = digitalPlatformUrl(platform);
+  return (
+    <li className="flex flex-wrap items-center gap-2">
+      {url ? (
+        <a
+          href={url}
+          target="_blank"
+          rel="noreferrer"
+          className="font-medium underline-offset-4 hover:underline"
+        >
+          {platform}
+        </a>
+      ) : (
+        <span className="font-medium">{platform}</span>
+      )}
+      <Badge className="bg-digital text-digital-foreground">
+        <Monitor aria-hidden />
+        Digital
+      </Badge>
+    </li>
   );
 }
 
