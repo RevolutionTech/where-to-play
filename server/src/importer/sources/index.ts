@@ -1,6 +1,7 @@
 import type { BggClient, BggStats } from "../../bgg/client";
 import type { collections, SourceConfigByKind } from "../../db/schema";
 import type { Fetch, Sleep } from "../../http";
+import { fetchCardboardConnectLibrary } from "./cardboard-connect";
 import { fetchGoogleSheet } from "./google-sheet";
 import { fetchTabletopEventsLibrary } from "./tabletop-events";
 import { fetchWebPage } from "./web-page";
@@ -44,6 +45,10 @@ async function fetchFromSource(
       const { username } = sourceConfig as SourceConfigByKind["bgg_collection"];
       const items = await context.bgg.fetchCollection(username);
       return items.map(({ bggId, name, stats }) => ({ bggId, name, bggStats: stats }));
+    }
+    case "cardboard_connect": {
+      const { instanceId } = sourceConfig as SourceConfigByKind["cardboard_connect"];
+      return fetchCardboardConnectLibrary(instanceId, context);
     }
     case "tabletop_events": {
       const { libraryId } = sourceConfig as SourceConfigByKind["tabletop_events"];
