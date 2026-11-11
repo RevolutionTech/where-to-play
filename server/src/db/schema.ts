@@ -85,6 +85,7 @@ export const collectionKind = whereToPlay.enum("collection_kind", [
 
 export const sourceKind = whereToPlay.enum("source_kind", [
   "bgg_collection",
+  "cardboard_connect",
   "google_sheet",
   "tabletop_events",
   "web_page",
@@ -97,6 +98,7 @@ export type ScraperRule = {
 
 export type SourceConfigByKind = {
   bgg_collection: { username: string };
+  cardboard_connect: { instanceId: string };
   google_sheet: { url: string; sheetName?: string };
   tabletop_events: { username: string; libraryId: string };
   web_page: { url: string; scraperRules: ScraperRule[] };

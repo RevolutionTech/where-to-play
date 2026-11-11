@@ -510,6 +510,56 @@ describe("importing a Tabletop.Events library", () => {
   });
 });
 
+describe("importing a Cardboard Connect library", () => {
+  function cardboardConnect(
+    instanceId: string,
+    pages: { total: number; collection: { name: string; bgg: number }[] }[],
+  ): Route {
+    return (url, init) => {
+      if (url.hostname !== "api.cardboardconnect.com") return undefined;
+      if (new Headers(init.headers).get("cbc-instance") !== instanceId) {
+        return Response.json({ status: 0, data: [] });
+      }
+      const page = pages[Number(url.searchParams.get("page")) - 1];
+      return Response.json({ status: 1, data: page ?? { total: 0, collection: [] } });
+    };
+  }
+
+  it("reads every page, and uses the BGG ID when the library has one", async () => {
+    await addCollection("ragecon", "cardboard_connect", { instanceId: "inst-1" });
+    await addGame("Azul", 230802);
+    const web = fakeWeb(
+      cardboardConnect("inst-1", [
+        { total: 2, collection: [{ name: "Catan: Base Game", bgg: 13 }] },
+        { total: 2, collection: [{ name: " Azul ", bgg: 0 }] },
+      ]),
+      bggThings({ bggId: 13, name: "Catan" }),
+      bggLogin,
+      bggAddTag,
+    );
+
+    const [report] = await importWith(web);
+
+    expect(report).toMatchObject({ outcome: "imported", sourceGameCount: 2 });
+    expect(await gamesIn("ragecon")).toEqual(["Azul", "Catan"]);
+    expect(web.requests.some((request) => request.url.pathname === "/xmlapi2/search")).toBe(false);
+  });
+
+  it("fails, and keeps the collection's games, when the library refuses the request", async () => {
+    const collection = await addCollection("ragecon", "cardboard_connect", {
+      instanceId: "inst-1",
+    });
+    const azul = await addGame("Azul", 230802);
+    await db.insert(collectionGames).values({ collectionId: collection.id, gameId: azul.id });
+    const web = fakeWeb(cardboardConnect("other-instance", []));
+
+    const [report] = await importWith(web);
+
+    expect(report).toMatchObject({ outcome: "failed", reason: expect.stringContaining("status") });
+    expect(await gamesIn("ragecon")).toEqual(["Azul"]);
+  });
+});
+
 describe("reporting a failed source", () => {
   it("leaves the API key out of the reason, because workflow logs are public", async () => {
     await addCollection("gamescape", "google_sheet", {
