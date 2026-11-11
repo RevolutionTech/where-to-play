@@ -1,6 +1,7 @@
 import type { BggClient, BggStats } from "../../bgg/client";
 import type { collections, SourceConfigByKind } from "../../db/schema";
 import type { Fetch, Sleep } from "../../http";
+import { fetchAirtableSharedPage } from "./airtable-shared-page";
 import { fetchCardboardConnectLibrary } from "./cardboard-connect";
 import { fetchGoogleSheet } from "./google-sheet";
 import { fetchTabletopEventsLibrary } from "./tabletop-events";
@@ -41,6 +42,11 @@ async function fetchFromSource(
   context: SourceContext,
 ) {
   switch (sourceKind) {
+    case "airtable_shared_page":
+      return fetchAirtableSharedPage(
+        sourceConfig as SourceConfigByKind["airtable_shared_page"],
+        context,
+      );
     case "bgg_collection": {
       const { username } = sourceConfig as SourceConfigByKind["bgg_collection"];
       const items = await context.bgg.fetchCollection(username);

@@ -560,6 +560,100 @@ describe("importing a Cardboard Connect library", () => {
   });
 });
 
+describe("importing an Airtable shared page", () => {
+  const accessPolicy = JSON.stringify({ shareId: "shrPage1", signature: "signed" });
+
+  function airtableSharedPage(tables: { tableId: string; names: string[] }[]): Route[] {
+    const page: Route = (url) =>
+      url.href === "https://airtable.com/embed/appBase1/shrPage1"
+        ? new Response(
+            `<script>initData = {"sharedPageId":"pagPage1","accessPolicy":${JSON.stringify(accessPolicy)}}</script>`,
+          )
+        : undefined;
+    const pageData: Route = (url, init) => {
+      if (url.pathname !== "/v0.3/application/appBase1/readForSharedPages") return undefined;
+      if (
+        url.searchParams.get("accessPolicy") !== accessPolicy ||
+        new Headers(init.headers).get("x-airtable-application-id") !== "appBase1"
+      ) {
+        return Response.json({ error: { type: "INVALID_REQUEST" } }, { status: 422 });
+      }
+      return Response.json({
+        data: {
+          tableSchemas: tables.map(({ tableId }) => ({
+            id: tableId,
+            primaryColumnId: `fldName${tableId}`,
+          })),
+          preloadPageQueryResults: {
+            querySlices: tables.map(({ tableId, names }) => ({
+              tableId,
+              rowIds: names.map((_, index) => `rec${tableId}${index}`),
+            })),
+            tableDataById: Object.fromEntries(
+              tables.map(({ tableId, names }) => [
+                tableId,
+                {
+                  partialRowById: Object.fromEntries(
+                    names.map((name, index) => [
+                      `rec${tableId}${index}`,
+                      {
+                        cellValuesByColumnId: {
+                          [`fldName${tableId}`]: name,
+                          fldFirstLetter: name[0],
+                        },
+                      },
+                    ]),
+                  ),
+                },
+              ]),
+            ),
+          },
+        },
+      });
+    };
+    return [page, pageData];
+  }
+
+  it("reads the name column of each table on the page", async () => {
+    await addCollection("dogpatch", "airtable_shared_page", {
+      url: "https://airtable.com/appBase1/shrPage1",
+    });
+    await addGame("Azul", 230802);
+    await addGame("Catan", 13);
+    await addGame("Wingspan", 266192);
+    const web = fakeWeb(
+      ...airtableSharedPage([
+        { tableId: "tblGames", names: ["Azul", "Catan"] },
+        { tableId: "tblNewArrivals", names: ["Wingspan"] },
+      ]),
+      bggThings(),
+      bggLogin,
+      bggAddTag,
+    );
+
+    const [report] = await importWith(web);
+
+    expect(report).toMatchObject({ outcome: "imported", sourceGameCount: 3 });
+    expect(await gamesIn("dogpatch")).toEqual(["Azul", "Catan", "Wingspan"]);
+  });
+
+  it("fails, and keeps the collection's games, when the link is not a shared page", async () => {
+    const collection = await addCollection("dogpatch", "airtable_shared_page", {
+      url: "https://airtable.com/appBase1/shrPage1",
+    });
+    const azul = await addGame("Azul", 230802);
+    await db.insert(collectionGames).values({ collectionId: collection.id, gameId: azul.id });
+    const web = fakeWeb((url) =>
+      url.hostname === "airtable.com" ? new Response("<html>Sign in</html>") : undefined,
+    );
+
+    const [report] = await importWith(web);
+
+    expect(report).toMatchObject({ outcome: "failed", reason: expect.stringContaining("shared") });
+    expect(await gamesIn("dogpatch")).toEqual(["Azul"]);
+  });
+});
+
 describe("reporting a failed source", () => {
   it("leaves the API key out of the reason, because workflow logs are public", async () => {
     await addCollection("gamescape", "google_sheet", {
