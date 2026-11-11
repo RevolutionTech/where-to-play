@@ -14,3 +14,6 @@ blob-report/
 
 # Collection lists for scripts/upsert-collections.ts. They can name private individuals.
 collections.*.json
+
+# Vercel CLI project link and build output.
+.vercel/

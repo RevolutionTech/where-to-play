@@ -26,5 +26,6 @@ To change server settings, edit `server/.env`. To start again with an empty data
 ## Documentation
 
 - [Architecture](docs/architecture.md)
+- [Deployment](docs/deployment.md)
 - [Decision records](docs/decisions/)
 - [AGENTS.md](AGENTS.md): guide for AI coding agents and a quick reference for commands

@@ -12,13 +12,17 @@ Browser ──> client (React SPA) ──/api──> server (Hono) ──> Postg
 
 ## Same Origin
 
-The client and server share one origin. In development, the Vite dev server sends `/api` requests to the server. In production, one host serves both the static files and `/api`. This removes the need for CORS configuration.
+The client and server share one origin. In development, the Vite dev server sends `/api` requests to the server. In production, Vercel serves both the static files and `/api`. This removes the need for CORS configuration.
+
+## Deployment
+
+Production runs on Vercel's free Hobby plan. Vercel serves `client/dist` and runs the server as one Node.js function. GitHub Actions migrates the database and deploys after CI passes on `main`. See [0006](decisions/0006-deployment.md) and [deployment.md](deployment.md).
 
 ## Portable Server
 
-The target hosting is a free serverless tier, such as Cloudflare Workers. For this reason:
+The server runs on a free serverless tier, and it must be able to move to another one. For this reason:
 
-- `server/src/app.ts` builds the app with web-standard APIs only. Each runtime gets a thin entry file (today: `server/src/server.ts` for Node).
+- `server/src/app.ts` builds the app with web-standard APIs only. Each runtime gets a thin entry file: `server/src/server.ts` for local Node, and `server/src/vercel.ts` for Vercel.
 - The entry file creates the database client and passes it to `createApp`. No module creates a client at top level.
 - postgres.js runs with prepared statements turned off, so it works through Supabase's transaction pooler.
 - The server keeps no state in memory between requests and runs no background jobs.
@@ -30,7 +34,3 @@ The search page and the game page get game data from the BGG API at request time
 ## Collection Importer
 
 A GitHub Actions workflow (`.github/workflows/import-collections.yml`) runs `server/scripts/import-collections.ts` each week. It reads the source of each row in `collections`, matches the games to BGG, updates `collection_games`, and keeps a BGG tag on each game in each collection. It is a separate process, so the server still runs no background jobs. See [0003](decisions/0003-collection-importer.md).
-
-## Not Yet Built
-
-- Deployment.
