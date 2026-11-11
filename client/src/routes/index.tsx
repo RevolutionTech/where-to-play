@@ -78,7 +78,7 @@ function GameSearchPage() {
         <div className="flex flex-wrap gap-x-6 gap-y-3">
           <FilterSwitch
             id="available"
-            label="Only games I can play somewhere"
+            label="Only games in a collection"
             checked={search.available === true}
             onCheckedChange={(checked) =>
               navigate({
@@ -204,11 +204,9 @@ function SearchResults({ search }: { search: GameSearch & { q: string } }) {
                 </span>
                 <span className="flex flex-wrap gap-1">
                   {game.isExpansion ? <Badge variant="outline">Expansion</Badge> : null}
-                  {game.collectionCount > 0 ? (
+                  {game.placeCount > 0 ? (
                     <Badge>
-                      {game.collectionCount === 1
-                        ? "At 1 place"
-                        : `At ${game.collectionCount} places`}
+                      {game.placeCount === 1 ? "At 1 place" : `At ${game.placeCount} places`}
                     </Badge>
                   ) : null}
                 </span>

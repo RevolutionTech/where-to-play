@@ -109,7 +109,9 @@ export function createGamesRoutes({ db, bgg }: GamesDependencies) {
               yearPublished: result.yearPublished,
               isExpansion: result.isExpansion,
               thumbnailUrl: thing?.thumbnailUrl ?? null,
-              collectionCount: collectionCounts.get(result.bggId) ?? 0,
+              placeCount:
+                (collectionCounts.get(result.bggId) ?? 0) +
+                (thing?.digitalImplementations.length ?? 0),
             };
           }),
         },

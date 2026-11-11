@@ -13,7 +13,7 @@ test("a search shows the matching games and how many places have each one", asyn
 
   await expect(page.getByText("2 games")).toBeVisible();
   await expect(page.getByTestId(catan)).toContainText("Catan (1995)");
-  await expect(page.getByTestId(catan)).toContainText("At 2 places");
+  await expect(page.getByTestId(catan)).toContainText("At 3 places");
   await expect(page.getByTestId(catanJunior)).toContainText("Catan Junior (2011)");
   await expect(page.getByTestId(catanJunior)).not.toContainText("place");
   await expect(page.getByTestId(catanSeafarers)).toHaveCount(0);
@@ -33,7 +33,7 @@ test("the available filter keeps only games that some place has", async ({ page 
   await page.goto("/?q=Catan");
   await expect(page.getByText("2 games")).toBeVisible();
 
-  await page.getByRole("switch", { name: "Only games I can play somewhere" }).click();
+  await page.getByRole("switch", { name: "Only games in a collection" }).click();
 
   await expect(page.getByText("1 game", { exact: true })).toBeVisible();
   await expect(page.getByTestId(catan)).toBeVisible();
@@ -46,7 +46,7 @@ test("a shared search URL shows the same filtered results", async ({ page }) => 
   await expect(page.getByRole("searchbox", { name: "Search for a board game" })).toHaveValue(
     "Catan",
   );
-  await expect(page.getByRole("switch", { name: "Only games I can play somewhere" })).toBeChecked();
+  await expect(page.getByRole("switch", { name: "Only games in a collection" })).toBeChecked();
   await expect(page.getByText("1 game", { exact: true })).toBeVisible();
   await expect(page.getByTestId(catan)).toBeVisible();
 });
