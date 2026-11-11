@@ -167,6 +167,7 @@ export function createGamesRoutes({ db, bgg }: GamesDependencies) {
           imageUrl: thing?.imageUrl ?? null,
           bggUrl: bggGameUrl(bggId),
           collections: owningCollections,
+          digitalImplementations: thing?.digitalImplementations ?? [],
         },
         200,
       );

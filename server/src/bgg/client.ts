@@ -33,6 +33,8 @@ export type BggThing = BggStats & {
   description: string | null;
   thumbnailUrl: string | null;
   imageUrl: string | null;
+  /** Platform names, such as "Board Game Arena", from the game's BGG families. */
+  digitalImplementations: string[];
 };
 
 export type BggSearchResult = {
@@ -61,13 +63,15 @@ export type BggClientOptions = {
 type XmlAttributes = Record<string, string>;
 type XmlItem = Record<string, unknown>;
 
+const DIGITAL_IMPLEMENTATION_PREFIX = "Digital Implementations: ";
+
 const xmlParser = new XMLParser({
   ignoreAttributes: false,
   attributeNamePrefix: "",
   parseTagValue: false,
   parseAttributeValue: false,
   htmlEntities: true,
-  isArray: (tagName) => ["item", "name", "rank", "error"].includes(tagName),
+  isArray: (tagName) => ["item", "name", "rank", "error", "link"].includes(tagName),
 });
 
 export class BggClient {
@@ -277,6 +281,7 @@ function toThing(item: XmlItem): BggThing {
   const names = asArray(item.name as XmlAttributes[] | undefined);
   const ratings = (item.statistics as { ratings?: Record<string, unknown> } | undefined)?.ratings;
   const description = textOf(item.description);
+  const links = asArray(item.link as XmlAttributes[] | undefined);
 
   return {
     bggId: Number(item.id),
@@ -289,6 +294,11 @@ function toThing(item: XmlItem): BggThing {
     description: description ? decodeHTML(description) : null,
     thumbnailUrl: textOf(item.thumbnail)?.trim() || null,
     imageUrl: textOf(item.image)?.trim() || null,
+    digitalImplementations: links.flatMap((link) =>
+      link.type === "boardgamefamily" && link.value?.startsWith(DIGITAL_IMPLEMENTATION_PREFIX)
+        ? [link.value.slice(DIGITAL_IMPLEMENTATION_PREFIX.length)]
+        : [],
+    ),
     yearPublished: numberAttribute(item.yearpublished),
     minPlayers: numberAttribute(item.minplayers),
     maxPlayers: numberAttribute(item.maxplayers),

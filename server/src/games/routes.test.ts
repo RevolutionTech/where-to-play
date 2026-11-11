@@ -23,6 +23,8 @@ type FakeBggGame = {
   name: string;
   yearPublished?: number;
   isExpansion?: boolean;
+  /** Family names, such as "Digital Implementations: Steam". */
+  families?: string[];
 };
 
 /** A BGG that knows the given games. Its search matches names that contain the query. */
@@ -67,6 +69,13 @@ function fakeBgg(catalog: FakeBggGame[], options: { down?: boolean } = {}) {
               <maxplayers value="4"/>
               <minplaytime value="60"/>
               <maxplaytime value="120"/>
+              <link type="boardgamemechanic" id="2072" value="Dice Rolling"/>
+              ${(game.families ?? [])
+                .map(
+                  (family, index) =>
+                    `<link type="boardgamefamily" id="${index + 1}" value="${family}"/>`,
+                )
+                .join("")}
               <statistics page="1"><ratings>
                 <average value="7.1"/>
                 <ranks><rank type="subtype" id="1" name="boardgame" value="575"/></ranks>
@@ -308,7 +317,31 @@ describe("GET /api/games/:bggId", () => {
           location: "San Francisco, CA",
         },
       ],
+      digitalImplementations: [],
     });
+  });
+
+  it("lists the digital implementations from the BGG families", async () => {
+    const { bgg } = fakeBgg([
+      {
+        bggId: 13,
+        name: "Catan",
+        families: [
+          "Animals: Sheep",
+          "Digital Implementations: Board Game Arena",
+          "Digital Implementations: Steam",
+          "Misc: BGG Hall of Fame",
+        ],
+      },
+    ]);
+    const app = createApp({ db, bgg });
+
+    const response = await app.request("/api/games/13");
+
+    expect(response.status).toBe(200);
+    expect(await response.json()).toEqual(
+      expect.objectContaining({ digitalImplementations: ["Board Game Arena", "Steam"] }),
+    );
   });
 
   it("gives an empty list of collections for a game that no collection owns", async () => {
@@ -341,6 +374,7 @@ describe("GET /api/games/:bggId", () => {
         minPlayers: 3,
         imageUrl: null,
         collections: [expect.objectContaining({ name: "The Game Parlour" })],
+        digitalImplementations: [],
       }),
     );
   });

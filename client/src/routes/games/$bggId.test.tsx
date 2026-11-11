@@ -29,6 +29,7 @@ const catan = {
       location: "San Francisco, CA",
     },
   ],
+  digitalImplementations: [],
 };
 
 describe("game details page", () => {
@@ -65,6 +66,28 @@ describe("game details page", () => {
     expect(requests.map((url) => url.pathname)).toEqual(["/api/games/13"]);
   });
 
+  it("lists digital implementations after the collections, with links to known platforms", async () => {
+    stubApi(() =>
+      Response.json({ ...catan, digitalImplementations: ["Board Game Arena", "Boardgamecore"] }),
+    );
+
+    renderApp("/games/13");
+
+    const collectionList = await screen.findByRole("list");
+    const items = within(collectionList).getAllByRole("listitem");
+    expect(items.map((item) => item.textContent)).toEqual([
+      "KublaConConvention",
+      "The Game ParlourCafeSan Francisco, CA",
+      "Board Game ArenaDigital",
+      "BoardgamecoreDigital",
+    ]);
+    expect(within(collectionList).getByRole("link", { name: "Board Game Arena" })).toHaveAttribute(
+      "href",
+      "https://boardgamearena.com/",
+    );
+    expect(within(collectionList).queryByRole("link", { name: "Boardgamecore" })).toBeNull();
+  });
+
   it("says when no collection owns the game", async () => {
     stubApi(() => Response.json({ ...catan, collections: [] }));
 
@@ -73,6 +96,18 @@ describe("game details page", () => {
     expect(
       await screen.findByText("No collections that we know of have this game."),
     ).toBeInTheDocument();
+  });
+
+  it("lists only digital implementations when no collection owns the game", async () => {
+    stubApi(() => Response.json({ ...catan, collections: [], digitalImplementations: ["Steam"] }));
+
+    renderApp("/games/13");
+
+    expect(await screen.findByRole("link", { name: "Steam" })).toHaveAttribute(
+      "href",
+      "https://store.steampowered.com/",
+    );
+    expect(screen.queryByText("No collections that we know of have this game.")).toBeNull();
   });
 
   it("says when the game does not exist", async () => {
