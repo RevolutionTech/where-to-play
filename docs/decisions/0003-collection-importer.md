@@ -18,10 +18,10 @@ A legacy Pipedream workflow imports collections. It fetches each source, matches
 - **One failing collection does not stop the others.** The run exits with an error at the end if any collection failed.
 - **Unmatched names go in `unmatched_names`.** `pending` names wait for a person to match them, and the importer searches BGG for them again on each run. `ignored` names are not games, and the importer leaves them out of collections.
 - **Accessories are not games.** Some sources list playmats, terrain, and other accessories with a BGG ID. The importer asks BGG for the type of each new ID and leaves accessories out of collections without a report. It still reports IDs that BGG does not know at all.
-- **BGG tags follow `collection_games`.** After the transaction commits, the importer adds the tag to each added game and removes it from each removed game. A tag error does not undo the database change.
+- **BGG tags follow `collection_games`.** After the transaction commits, the importer adds the tag to each added game and removes it from each removed game. A tag error does not undo the database change. [0007](0007-bgg-tag-sync.md) changes how tag changes are kept and applied.
 
 ## Consequences
 
-- If a tag change fails on BGG, the database and BGG disagree until a person fixes the tag. The run reports each failure.
+- If a tag change fails on BGG, the database and BGG disagree until a person fixes the tag. The run reports each failure. [0007](0007-bgg-tag-sync.md) replaces this: a failed change stays pending.
 - The importer refreshes details of known games only when a BGG collection lists them. It does not send extra requests to refresh details.
 - A collection's first import adds its BGG tag to every game, also to games that already have it.

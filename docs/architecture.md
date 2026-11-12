@@ -33,4 +33,6 @@ The search page and the game page get game data from the BGG API at request time
 
 ## Collection Importer
 
-A GitHub Actions workflow (`.github/workflows/import-collections.yml`) runs `server/scripts/import-collections.ts` each week. It reads the source of each row in `collections`, matches the games to BGG, updates `collection_games`, and keeps a BGG tag on each game in each collection. It is a separate process, so the server still runs no background jobs. See [0003](decisions/0003-collection-importer.md).
+A GitHub Actions workflow (`.github/workflows/import-collections.yml`) runs `server/scripts/import-collections.ts` each week. It reads the source of each row in `collections`, matches the games to BGG, and updates `collection_games`. It is a separate process, so the server still runs no background jobs. See [0003](decisions/0003-collection-importer.md).
+
+Each collection also has a BGG tag on each of its games. BGG refuses logins from GitHub-hosted runners, so the workflow leaves tag changes pending in the database, and `pnpm tags:sync` applies them from a machine that BGG allows. See [0007](decisions/0007-bgg-tag-sync.md).

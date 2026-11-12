@@ -1,7 +1,8 @@
-import { asc, eq, inArray, sql, TransactionRollbackError } from "drizzle-orm";
+import { and, asc, eq, inArray, sql, TransactionRollbackError } from "drizzle-orm";
 import type { BggStats, BggThing } from "../bgg/client";
 import type { Database } from "../db/client";
 import {
+  bggTagRemovals,
   collectionGames,
   collections,
   gameNames,
@@ -9,6 +10,7 @@ import {
   normalizeGameName,
   unmatchedNames,
 } from "../db/schema";
+import { countPendingTagChanges, syncCollectionTags, type TagSyncResult } from "./bgg-tags";
 import { fetchSourceGames, type SourceContext } from "./sources";
 
 export type ImportOptions = {
@@ -18,6 +20,8 @@ export type ImportOptions = {
   dryRun?: boolean;
   /** Import collections even when their source shrinks a lot. */
   force?: boolean;
+  /** Save the import, but leave BGG tag changes pending for a later tag sync. */
+  skipTags?: boolean;
 };
 
 export type CollectionReport = {
@@ -34,7 +38,7 @@ export type CollectionReport = {
   unmatchedNames: string[];
   /** BGG IDs that a source gives, but that BGG knows as neither a game nor an accessory. */
   unknownBggIds: number[];
-  tagFailures: string[];
+  tags: TagSyncResult;
 };
 
 type Collection = typeof collections.$inferSelect;
@@ -114,7 +118,6 @@ async function importCollection(
   );
 
   // Phase 2: write everything for this collection in one short transaction.
-  let tagChanges: { added: number[]; removed: number[] } = { added: [], removed: [] };
   try {
     await db.transaction(async (db) => {
       report.newGameCount = await saveThings(db, newThings);
@@ -181,27 +184,44 @@ async function importCollection(
           );
       }
 
-      tagChanges = {
-        added: await bggIdsOf(db, addedGameIds),
-        removed: await bggIdsOf(db, removedGameIds),
-      };
+      if (collection.bggTag) {
+        await recordTagRemovals(db, collection.bggTag, removedGameIds, addedGameIds);
+      }
       if (options.dryRun) db.rollback();
     });
   } catch (error) {
     if (!(error instanceof TransactionRollbackError)) throw error;
   }
 
-  // Phase 3: BGG tags follow the committed change.
-  if (options.dryRun || !collection.bggTag) return;
-  for (const bggId of tagChanges.added) {
-    await changeTag(report, `add to ${bggId}`, () =>
-      context.bgg.addTag(bggId, collection.bggTag as string),
-    );
+  // Phase 3: BGG tags follow the committed change. A failed tag change stays pending.
+  report.tags =
+    options.dryRun || options.skipTags
+      ? { ...report.tags, pendingTagCount: await countPendingTagChanges(db, collection) }
+      : await syncCollectionTags(db, context.bgg, collection);
+}
+
+/**
+ * Removed games need their tag removed. A game that came back keeps its tag, so its pending
+ * removal is cancelled; its new row is untagged, and the next sync adds the tag again.
+ */
+async function recordTagRemovals(
+  db: DatabaseOrTransaction,
+  bggTag: string,
+  removedGameIds: number[],
+  addedGameIds: number[],
+) {
+  const removedBggIds = await bggIdsOf(db, removedGameIds);
+  if (removedBggIds.length > 0) {
+    await db
+      .insert(bggTagRemovals)
+      .values(removedBggIds.map((bggId) => ({ bggTag, bggId })))
+      .onConflictDoNothing();
   }
-  for (const bggId of tagChanges.removed) {
-    await changeTag(report, `remove from ${bggId}`, () =>
-      context.bgg.removeTag(bggId, collection.bggTag as string),
-    );
+  const addedBggIds = await bggIdsOf(db, addedGameIds);
+  if (addedBggIds.length > 0) {
+    await db
+      .delete(bggTagRemovals)
+      .where(and(eq(bggTagRemovals.bggTag, bggTag), inArray(bggTagRemovals.bggId, addedBggIds)));
   }
 }
 
@@ -216,7 +236,7 @@ function emptyReport(slug: string): CollectionReport {
     refreshedGameCount: 0,
     unmatchedNames: [],
     unknownBggIds: [],
-    tagFailures: [],
+    tags: { addedTagCount: 0, removedTagCount: 0, failedTagCount: 0, pendingTagCount: 0 },
   };
 }
 
@@ -339,17 +359,4 @@ async function deleteResolvedUnmatchedNames(db: DatabaseOrTransaction) {
         WHERE game_names.name_normalized = unmatched_names.name_normalized
       )
   `);
-}
-
-async function changeTag(
-  report: CollectionReport,
-  description: string,
-  change: () => Promise<void>,
-) {
-  try {
-    await change();
-  } catch (error) {
-    const message = error instanceof Error ? error.message : String(error);
-    report.tagFailures.push(`${description}: ${message}`);
-  }
 }

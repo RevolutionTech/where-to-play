@@ -3,6 +3,7 @@ import { afterAll, beforeEach, describe, expect, it } from "vitest";
 import { BggClient } from "../bgg/client";
 import { createDatabase } from "../db/client";
 import {
+  bggTagRemovals,
   collectionGames,
   collections,
   gameNames,
@@ -11,6 +12,7 @@ import {
   unmatchedNames,
 } from "../db/schema";
 import { testDatabaseUrl } from "../test/database";
+import { syncBggTags } from "./bgg-tags";
 import { importCollections } from "./import-collections";
 
 const db = createDatabase(testDatabaseUrl());
@@ -21,7 +23,7 @@ afterAll(async () => {
 
 beforeEach(async () => {
   await db.execute(
-    sql`TRUNCATE ${collectionGames}, ${collections}, ${gameNames}, ${games}, ${unmatchedNames} RESTART IDENTITY`,
+    sql`TRUNCATE ${bggTagRemovals}, ${collectionGames}, ${collections}, ${gameNames}, ${games}, ${unmatchedNames} RESTART IDENTITY`,
   );
 });
 
@@ -47,18 +49,22 @@ function fakeWeb(...routes: Route[]) {
   return { fetch: fakeFetch as typeof fetch, requests };
 }
 
-function importWith(web: ReturnType<typeof fakeWeb>, options = {}) {
-  const sleep = async () => {};
-  const bgg = new BggClient({
+const noSleep = async () => {};
+
+function bggClientWith(web: ReturnType<typeof fakeWeb>) {
+  return new BggClient({
     apiToken: "test-token",
     credentials: { username: "importer", password: "secret" },
     fetch: web.fetch,
-    sleep,
+    sleep: noSleep,
     minRequestGapMs: 0,
   });
+}
+
+function importWith(web: ReturnType<typeof fakeWeb>, options = {}) {
   return importCollections(
     db,
-    { fetch: web.fetch, sleep, bgg, googleSheetsApiKey: "test-key" },
+    { fetch: web.fetch, sleep: noSleep, bgg: bggClientWith(web), googleSheetsApiKey: "test-key" },
     options,
   );
 }
@@ -68,8 +74,40 @@ const bggLogin: Route = (url) =>
     ? new Response(null, { status: 204, headers: { "Set-Cookie": "SessionID=abc; Path=/" } })
     : undefined;
 
+const bggLoginBlocked: Route = (url) =>
+  url.pathname === "/login/api/v1"
+    ? new Response("<!DOCTYPE html><title>Attention Required!</title>", {
+        status: 403,
+        statusText: "Forbidden",
+      })
+    : undefined;
+
 const bggAddTag: Route = (url, init) =>
   url.pathname === "/api/tags" && init.method === "POST" ? Response.json({}) : undefined;
+
+/** BGG's answers for removing a tag: the tag lookup for one game, then the pin delete. */
+function bggRemoveTag(bggId: number, tag: string, pinId: number): Route {
+  return (url, init) => {
+    if (
+      url.pathname === "/api/tags" &&
+      init.method === undefined &&
+      url.searchParams.get("objectid") === String(bggId)
+    )
+      return Response.json({ mytags: [{ rawtag: tag, pinid: pinId }] });
+    if (url.pathname === `/api/pins/${pinId}` && init.method === "DELETE") return Response.json({});
+    return undefined;
+  };
+}
+
+function tagRequests(web: ReturnType<typeof fakeWeb>) {
+  return web.requests
+    .filter((request) => request.url.pathname.startsWith("/api/"))
+    .map((request) =>
+      request.method === "POST"
+        ? `add ${JSON.parse(request.body).objectid}`
+        : `${request.method} ${request.url.pathname}${request.url.search}`,
+    );
+}
 
 type FakeCollectionItem = { bggId: number; name: string; minPlayers?: number; rank?: number };
 
@@ -253,8 +291,8 @@ describe("importing a BGG collection", () => {
     const catan = await addGame("Catan", 13);
     const azul = await addGame("Azul", 230802);
     await db.insert(collectionGames).values([
-      { collectionId: collection.id, gameId: catan.id },
-      { collectionId: collection.id, gameId: azul.id },
+      { collectionId: collection.id, gameId: catan.id, bggTaggedAt: new Date() },
+      { collectionId: collection.id, gameId: azul.id, bggTaggedAt: new Date() },
     ]);
     const web = fakeWeb(
       bggCollection("parlour-bgg", [{ bggId: 13, name: "Catan" }]),
@@ -758,5 +796,162 @@ describe("a dry run", () => {
     expect(await db.select().from(games)).toEqual([]);
     expect(await db.select().from(unmatchedNames)).toEqual([]);
     expect(web.requests.some((request) => request.url.pathname.startsWith("/api/"))).toBe(false);
+  });
+});
+
+describe("BGG tags", () => {
+  it("logs in once when BGG refuses the login, and leaves every tag change pending", async () => {
+    await addCollection("a-parlour", "bgg_collection", { username: "parlour-bgg" });
+    await addCollection("b-cafe", "bgg_collection", { username: "cafe-bgg" });
+    await addGame("Catan", 13);
+    await addGame("Carcassonne", 822);
+    const web = fakeWeb(
+      bggCollection("parlour-bgg", [
+        { bggId: 13, name: "Catan" },
+        { bggId: 822, name: "Carcassonne" },
+      ]),
+      bggCollection("cafe-bgg", [{ bggId: 13, name: "Catan" }]),
+      bggLoginBlocked,
+    );
+
+    const reports = await importWith(web);
+
+    expect(reports.map((report) => [report.slug, report.outcome, report.tags])).toEqual([
+      [
+        "a-parlour",
+        "imported",
+        {
+          addedTagCount: 0,
+          removedTagCount: 0,
+          failedTagCount: 2,
+          firstTagFailure: expect.stringMatching(/^add to 13: BGG login failed: 403 Forbidden/),
+          pendingTagCount: 2,
+        },
+      ],
+      [
+        "b-cafe",
+        "imported",
+        {
+          addedTagCount: 0,
+          removedTagCount: 0,
+          failedTagCount: 1,
+          firstTagFailure: expect.stringMatching(/^add to 13: BGG login failed: 403 Forbidden/),
+          pendingTagCount: 1,
+        },
+      ],
+    ]);
+    expect(await gamesIn("a-parlour")).toEqual(["Carcassonne", "Catan"]);
+    expect(web.requests.filter((request) => request.url.pathname === "/login/api/v1")).toHaveLength(
+      1,
+    );
+    expect(tagRequests(web)).toEqual([]);
+  });
+
+  it("applies the tag changes that failed on a later sync, and then has nothing to do", async () => {
+    const collection = await addCollection("parlour", "bgg_collection", {
+      username: "parlour-bgg",
+    });
+    await addGame("Catan", 13);
+    const azul = await addGame("Azul", 230802);
+    await db
+      .insert(collectionGames)
+      .values({ collectionId: collection.id, gameId: azul.id, bggTaggedAt: new Date() });
+    await importWith(
+      fakeWeb(bggCollection("parlour-bgg", [{ bggId: 13, name: "Catan" }]), bggLoginBlocked),
+    );
+
+    const web = fakeWeb(bggLogin, bggAddTag, bggRemoveTag(230802, "Collection:-parlour", 55));
+    const [report] = await syncBggTags(db, bggClientWith(web));
+
+    expect(report).toEqual({
+      slug: "parlour",
+      addedTagCount: 1,
+      removedTagCount: 1,
+      failedTagCount: 0,
+      pendingTagCount: 0,
+    });
+    expect(tagRequests(web)).toEqual([
+      "add 13",
+      "GET /api/tags?objecttype=thing&objectid=230802",
+      "DELETE /api/pins/55",
+    ]);
+
+    const laterWeb = fakeWeb(bggLogin);
+    const [laterReport] = await syncBggTags(db, bggClientWith(laterWeb));
+
+    expect(laterReport).toMatchObject({ addedTagCount: 0, removedTagCount: 0, pendingTagCount: 0 });
+    expect(laterWeb.requests).toEqual([]);
+  });
+
+  it("saves the import with no BGG login when tags are skipped, and reports them as pending", async () => {
+    await addCollection("parlour", "bgg_collection", { username: "parlour-bgg" });
+    await addGame("Catan", 13);
+    await addGame("Carcassonne", 822);
+    const web = fakeWeb(
+      bggCollection("parlour-bgg", [
+        { bggId: 13, name: "Catan" },
+        { bggId: 822, name: "Carcassonne" },
+      ]),
+    );
+
+    const [report] = await importWith(web, { skipTags: true });
+
+    expect(report).toMatchObject({
+      outcome: "imported",
+      addedGameCount: 2,
+      tags: { addedTagCount: 0, failedTagCount: 0, pendingTagCount: 2 },
+    });
+    expect(await gamesIn("parlour")).toEqual(["Carcassonne", "Catan"]);
+    expect(web.requests.some((request) => request.url.pathname === "/login/api/v1")).toBe(false);
+    expect(tagRequests(web)).toEqual([]);
+  });
+
+  it("adds the tag again, and removes nothing, when a game comes back before the removal syncs", async () => {
+    const collection = await addCollection("parlour", "bgg_collection", {
+      username: "parlour-bgg",
+    });
+    const catan = await addGame("Catan", 13);
+    const azul = await addGame("Azul", 230802);
+    await db.insert(collectionGames).values([
+      { collectionId: collection.id, gameId: catan.id, bggTaggedAt: new Date() },
+      { collectionId: collection.id, gameId: azul.id, bggTaggedAt: new Date() },
+    ]);
+    await importWith(fakeWeb(bggCollection("parlour-bgg", [{ bggId: 13, name: "Catan" }])), {
+      skipTags: true,
+    });
+    await importWith(
+      fakeWeb(
+        bggCollection("parlour-bgg", [
+          { bggId: 13, name: "Catan" },
+          { bggId: 230802, name: "Azul" },
+        ]),
+      ),
+      { skipTags: true },
+    );
+
+    const web = fakeWeb(bggLogin, bggAddTag);
+    const [report] = await syncBggTags(db, bggClientWith(web));
+
+    expect(report).toMatchObject({ addedTagCount: 1, removedTagCount: 0, pendingTagCount: 0 });
+    expect(tagRequests(web)).toEqual(["add 230802"]);
+  });
+
+  it("syncs only the collections it is asked for", async () => {
+    await addCollection("a-parlour", "bgg_collection", { username: "parlour-bgg" });
+    await addCollection("b-cafe", "bgg_collection", { username: "cafe-bgg" });
+    await addGame("Catan", 13);
+    await importWith(
+      fakeWeb(
+        bggCollection("parlour-bgg", [{ bggId: 13, name: "Catan" }]),
+        bggCollection("cafe-bgg", [{ bggId: 13, name: "Catan" }]),
+      ),
+      { skipTags: true },
+    );
+
+    const web = fakeWeb(bggLogin, bggAddTag);
+    const reports = await syncBggTags(db, bggClientWith(web), { slugs: ["b-cafe"] });
+
+    expect(reports.map((report) => [report.slug, report.addedTagCount])).toEqual([["b-cafe", 1]]);
+    expect(tagRequests(web)).toEqual(["add 13"]);
   });
 });

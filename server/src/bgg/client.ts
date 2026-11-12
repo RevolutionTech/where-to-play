@@ -74,10 +74,14 @@ const xmlParser = new XMLParser({
   isArray: (tagName) => ["item", "name", "rank", "error", "link"].includes(tagName),
 });
 
+/** BGG refused the login, so no tag change can succeed until a new client logs in. */
+export class BggLoginError extends Error {}
+
 export class BggClient {
   private readonly options: Required<Omit<BggClientOptions, "credentials">> &
     Pick<BggClientOptions, "credentials">;
   private sessionCookie: string | undefined;
+  private loginError: BggLoginError | undefined;
   private lastRequestAt = Number.NEGATIVE_INFINITY;
 
   constructor(options: BggClientOptions) {
@@ -178,26 +182,39 @@ export class BggClient {
 
   private async login() {
     if (this.sessionCookie) return;
-    const { credentials } = this.options;
-    if (!credentials) throw new Error("BGG tag changes need BGG_USERNAME and BGG_PASSWORD.");
-    const response = await ensureOk(
-      await this.options.fetch(`${this.options.baseUrl}/login/api/v1`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ credentials }),
-      }),
-    );
-    const cookies = response.headers.getSetCookie().map((cookie) => cookie.split(";")[0]);
-    if (cookies.length === 0) throw new Error("BGG login gave no session cookie.");
-    this.sessionCookie = cookies.join("; ");
+    // Each try would fail the same way, and more refused logins make BGG's firewall stricter.
+    if (this.loginError) throw this.loginError;
+    try {
+      const { credentials } = this.options;
+      if (!credentials) throw new Error("BGG tag changes need BGG_USERNAME and BGG_PASSWORD.");
+      await this.waitForRequestGap();
+      const response = await ensureOk(
+        await this.options.fetch(`${this.options.baseUrl}/login/api/v1`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ credentials }),
+        }),
+      );
+      const cookies = response.headers.getSetCookie().map((cookie) => cookie.split(";")[0]);
+      if (cookies.length === 0) throw new Error("BGG login gave no session cookie.");
+      this.sessionCookie = cookies.join("; ");
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      this.loginError = new BggLoginError(`BGG login failed: ${message}`);
+      throw this.loginError;
+    }
+  }
+
+  private async waitForRequestGap() {
+    const gapLeftMs = this.lastRequestAt + this.options.minRequestGapMs - Date.now();
+    if (gapLeftMs > 0) await this.options.sleep(gapLeftMs);
+    this.lastRequestAt = Date.now();
   }
 
   private async request(url: string, init: RequestInit = {}): Promise<Response> {
     let backoffMs = Math.min(2000, this.options.maxBackoffMs);
     for (let retry = 0; ; retry++) {
-      const gapLeftMs = this.lastRequestAt + this.options.minRequestGapMs - Date.now();
-      if (gapLeftMs > 0) await this.options.sleep(gapLeftMs);
-      this.lastRequestAt = Date.now();
+      await this.waitForRequestGap();
 
       const response = await this.options.fetch(url, {
         ...init,

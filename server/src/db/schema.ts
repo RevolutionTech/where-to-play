@@ -134,11 +134,29 @@ export const collectionGames = whereToPlay.table(
     gameId: bigint("game_id", { mode: "number" })
       .notNull()
       .references(() => games.id, { onDelete: "cascade" }),
+    // Null until BGG confirms the collection's tag on the game. Each tag sync tries the nulls again.
+    bggTaggedAt: timestamp("bgg_tagged_at", { withTimezone: true }),
   },
   (table) => [
     primaryKey({ columns: [table.collectionId, table.gameId] }),
     index("collection_games_game_id_idx").on(table.gameId),
   ],
+);
+
+/**
+ * BGG tags to remove from games that left a collection. A row stays until BGG confirms the
+ * removal, so each tag sync tries a failed removal again. A sync handles only the tags of
+ * current collections, so a deleted collection or a changed `bgg_tag` leaves its old tags on
+ * BGG; only an audit of the tags on BGG finds them.
+ */
+export const bggTagRemovals = whereToPlay.table(
+  "bgg_tag_removals",
+  {
+    bggTag: text("bgg_tag").notNull(),
+    bggId: integer("bgg_id").notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [primaryKey({ columns: [table.bggTag, table.bggId] })],
 );
 
 export const unmatchedNameStatus = whereToPlay.enum("unmatched_name_status", [
