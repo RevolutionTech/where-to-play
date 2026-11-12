@@ -19,7 +19,8 @@
     "import:collections": "tsx --env-file-if-exists=.env scripts/import-collections.ts",
     "collections:upsert": "tsx --env-file-if-exists=.env scripts/upsert-collections.ts",
     "names:review": "tsx --env-file-if-exists=.env scripts/review-unmatched-names.ts",
-    "tags:sync": "tsx --env-file-if-exists=.env scripts/sync-bgg-tags.ts"
+    "tags:sync": "tsx --env-file-if-exists=.env scripts/sync-bgg-tags.ts",
+    "tags:audit": "tsx --env-file-if-exists=.env scripts/audit-bgg-tags.ts"
   },
   "dependencies": {
     "@hono/node-server": "^2.1.6",
