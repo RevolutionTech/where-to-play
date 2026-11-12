@@ -25,6 +25,7 @@ The app has a React SPA (`client/`) and an API server (`server/`). The server re
   - `src/db/seed.ts`: sample data. `scripts/seed.ts` runs it, only against localhost.
   - `drizzle/`: SQL migrations. Generate them with `pnpm db:generate`. Do not edit `drizzle/meta/`.
   - `src/importer/`: the collection importer. `sources/` has one fetcher for each `source_kind`. `scripts/import-collections.ts` runs it.
+  - `src/importer/bgg-tags.ts`: applies pending BGG tag changes. `scripts/sync-bgg-tags.ts` runs it. See `docs/decisions/0007-bgg-tag-sync.md`.
   - `scripts/review-unmatched-names.ts`: lists pending names in `unmatched_names` and saves review decisions. The `unmatched-name-review` skill (`.claude/skills/`) uses it.
   - `scripts/upsert-collections.ts`: makes collections match a JSON list (`pnpm collections:upsert <file>`). Keep lists in `server/collections.*.json`, which git ignores, because private collections name individuals. Never commit names of individuals or their BGG usernames. See `docs/decisions/0004-private-collections.md`.
   - `src/test/`: test setup. Vitest migrates the test database (`TEST_DATABASE_URL`) before tests run.
@@ -32,7 +33,7 @@ The app has a React SPA (`client/`) and an API server (`server/`). The server re
 - `docker-compose.yml`: local PostgreSQL 17 on port 54329, with `where_to_play`, `where_to_play_test`, and `where_to_play_e2e` databases.
 - `docs/`: architecture notes and decision records (`docs/decisions/`).
 - `.github/workflows/ci.yml`: lint, typecheck, test, build, and E2E tests on each push and PR.
-- `.github/workflows/import-collections.yml`: imports all collections into production each week. Run it by hand from the Actions tab for a dry run or for some collections only.
+- `.github/workflows/import-collections.yml`: imports all collections into production each week. Run it by hand from the Actions tab for a dry run or for some collections only. It leaves BGG tag changes pending, because BGG refuses logins from GitHub-hosted runners.
 - `.github/workflows/deploy.yml`: after CI passes on `main`, migrates the production database and deploys to Vercel.
 - `.github/workflows/health-check.yml`: calls `/api/health` in production each day.
 - `vercel.json`: Vercel build and routing settings. See `docs/deployment.md` for the one-time setup.
@@ -67,6 +68,8 @@ Game search needs `BGG_API_TOKEN` in `server/.env`. Run the collection importer 
 pnpm import:collections --dry-run                  # show the changes, save nothing
 pnpm import:collections --collection kublacon      # import one collection (repeat for more)
 pnpm import:collections --force                    # import even when a source lost half its games
+pnpm import:collections --skip-tags                # import, and leave BGG tag changes pending
+pnpm tags:sync                                     # apply pending BGG tag changes (needs BGG_USERNAME and BGG_PASSWORD)
 ```
 
 Run one package's script with `pnpm --filter @where-to-play/<client|server> <script>`.

@@ -19,7 +19,7 @@ on:
         type: boolean
         default: false
 
-# Two imports at the same time could change the same BGG tags.
+# Two imports at the same time could change the same collections.
 concurrency:
   group: import-collections
   cancel-in-progress: false
@@ -42,14 +42,14 @@ jobs:
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
           BGG_API_TOKEN: ${{ secrets.BGG_API_TOKEN }}
-          BGG_USERNAME: ${{ secrets.BGG_USERNAME }}
-          BGG_PASSWORD: ${{ secrets.BGG_PASSWORD }}
           GOOGLE_SHEETS_API_KEY: ${{ secrets.GOOGLE_SHEETS_API_KEY }}
           COLLECTIONS: ${{ inputs.collections }}
           DRY_RUN: ${{ inputs.dry-run }}
           FORCE: ${{ inputs.force }}
+        # BGG's firewall refuses logins from GitHub-hosted runners, so tag changes stay pending
+        # until someone runs `pnpm tags:sync` where BGG allows the login.
         run: |
-          args=()
+          args=(--skip-tags)
           for slug in $COLLECTIONS; do args+=(--collection "$slug"); done
           if [ "$DRY_RUN" = "true" ]; then args+=(--dry-run); fi
           if [ "$FORCE" = "true" ]; then args+=(--force); fi
