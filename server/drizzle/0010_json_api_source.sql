@@ -1,0 +1,1 @@
+ALTER TYPE "where_to_play"."source_kind" ADD VALUE 'json_api' BEFORE 'tabletop_events';

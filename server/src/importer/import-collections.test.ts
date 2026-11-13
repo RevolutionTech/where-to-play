@@ -692,6 +692,77 @@ describe("importing an Airtable shared page", () => {
   });
 });
 
+describe("importing a JSON API", () => {
+  function jsonApi(apiUrl: string, body: unknown): Route {
+    return (url) => (url.href === apiUrl ? Response.json(body) : undefined);
+  }
+
+  it("keeps the items that pass every condition, and uses the BGG ID when the item has one", async () => {
+    await addCollection("library", "json_api", {
+      url: "https://library.example/api/catalog",
+      itemsPath: "catalog.games",
+      namePath: "title",
+      bggIdPath: "ids.bgg",
+      where: [{ path: "copies", greaterThan: 0 }],
+    });
+    await addGame("Azul", 230802);
+    const web = fakeWeb(
+      jsonApi("https://library.example/api/catalog", {
+        catalog: {
+          games: [
+            { title: "Catan: Base Game", ids: { bgg: "13" }, copies: 2 },
+            { title: " Azul ", ids: { bgg: 0 }, copies: 1 },
+            { title: "Brass: Birmingham", ids: { bgg: 224517 }, copies: 0 },
+            { title: "Root", ids: { bgg: 237182 } },
+          ],
+        },
+      }),
+      bggThings({ bggId: 13, name: "Catan" }),
+      bggLogin,
+      bggAddTag,
+    );
+
+    const [report] = await importWith(web);
+
+    expect(report).toMatchObject({ outcome: "imported", sourceGameCount: 2 });
+    expect(await gamesIn("library")).toEqual(["Azul", "Catan"]);
+  });
+
+  it("reads the response as the array of items when the config has no items path", async () => {
+    await addCollection("library", "json_api", {
+      url: "https://library.example/games.json",
+      namePath: "name",
+    });
+    await addGame("Azul", 230802);
+    const web = fakeWeb(
+      jsonApi("https://library.example/games.json", [{ name: "Azul" }]),
+      bggLogin,
+      bggAddTag,
+    );
+
+    const [report] = await importWith(web);
+
+    expect(report).toMatchObject({ outcome: "imported", sourceGameCount: 1 });
+    expect(await gamesIn("library")).toEqual(["Azul"]);
+  });
+
+  it("fails, and keeps the collection's games, when the items path has no array", async () => {
+    const collection = await addCollection("library", "json_api", {
+      url: "https://library.example/api/catalog",
+      itemsPath: "games",
+      namePath: "title",
+    });
+    const azul = await addGame("Azul", 230802);
+    await db.insert(collectionGames).values({ collectionId: collection.id, gameId: azul.id });
+    const web = fakeWeb(jsonApi("https://library.example/api/catalog", { items: [] }));
+
+    const [report] = await importWith(web);
+
+    expect(report).toMatchObject({ outcome: "failed", reason: expect.stringContaining('"games"') });
+    expect(await gamesIn("library")).toEqual(["Azul"]);
+  });
+});
+
 describe("reporting a failed source", () => {
   it("leaves the API key out of the reason, because workflow logs are public", async () => {
     await addCollection("gamescape", "google_sheet", {
