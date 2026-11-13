@@ -4,7 +4,7 @@
 
 Where to Play is a hobby web app. It helps gamers find public places where they can play a specific board game. A user searches for a board game by name. The app then lists the conventions and board game cafes that have that game in their collection.
 
-Today, each cafe or convention publishes its collection in a different place: a spreadsheet, an Airtable page, a Tabletop.Events or Cardboard Connect library, a custom web page, or a BoardGameGeek (BGG) collection. Where to Play brings these sources together in one search.
+Today, each cafe or convention publishes its collection in a different place: a spreadsheet, an Airtable page, a Tabletop.Events or Cardboard Connect library, a JSON API, a custom web page, or a BoardGameGeek (BGG) collection. Where to Play brings these sources together in one search.
 
 The app has a React SPA (`client/`) and an API server (`server/`). The server reads from PostgreSQL: a local database in development, Supabase in production. See `docs/architecture.md` for how the parts fit together.
 
@@ -24,7 +24,7 @@ The app has a React SPA (`client/`) and an API server (`server/`). The server re
   - `src/db/client.ts`: `createDatabase(url)`. Do not create a client at module top level.
   - `src/db/seed.ts`: sample data. `scripts/seed.ts` runs it, only against localhost.
   - `drizzle/`: SQL migrations. Generate them with `pnpm db:generate`. Do not edit `drizzle/meta/`.
-  - `src/importer/`: the collection importer. `sources/` has one fetcher for each `source_kind`. `scripts/import-collections.ts` runs it.
+  - `src/importer/`: the collection importer. `sources/` has one fetcher for each `source_kind`. `json_api` reads any JSON API that its config describes; see `docs/decisions/0008-json-api-source.md`. `scripts/import-collections.ts` runs it.
   - `src/importer/bgg-tags.ts`: applies pending BGG tag changes. `scripts/sync-bgg-tags.ts` runs it. See `docs/decisions/0007-bgg-tag-sync.md`.
   - `src/importer/bgg-tag-audit.ts`: compares the tags on BGG with `collection_games`. `scripts/audit-bgg-tags.ts` runs it on a file that `scripts/export-bgg-tags.browser.js` downloads in a browser. Git ignores these `bgg-tags*.json` files, because tag names can name individuals.
   - `scripts/review-unmatched-names.ts`: lists pending names in `unmatched_names` and saves review decisions. The `unmatched-name-review` skill (`.claude/skills/`) uses it.

@@ -4,6 +4,7 @@ import type { Fetch, Sleep } from "../../http";
 import { fetchAirtableSharedPage } from "./airtable-shared-page";
 import { fetchCardboardConnectLibrary } from "./cardboard-connect";
 import { fetchGoogleSheet } from "./google-sheet";
+import { fetchJsonApi } from "./json-api";
 import { fetchTabletopEventsLibrary } from "./tabletop-events";
 import { fetchWebPage } from "./web-page";
 
@@ -65,6 +66,8 @@ async function fetchFromSource(
         fetch: context.fetch,
         apiKey: context.googleSheetsApiKey,
       });
+    case "json_api":
+      return fetchJsonApi(sourceConfig as SourceConfigByKind["json_api"], context);
     case "web_page":
       return fetchWebPage(sourceConfig as SourceConfigByKind["web_page"], context);
   }

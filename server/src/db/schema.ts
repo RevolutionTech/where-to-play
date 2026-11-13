@@ -88,6 +88,7 @@ export const sourceKind = whereToPlay.enum("source_kind", [
   "bgg_collection",
   "cardboard_connect",
   "google_sheet",
+  "json_api",
   "tabletop_events",
   "web_page",
 ]);
@@ -97,12 +98,22 @@ export type ScraperRule = {
   attributes?: Record<string, string | string[]>;
 };
 
+export type JsonApiCondition = { path: string; greaterThan: number };
+
 export type SourceConfigByKind = {
   // The link to a shared Airtable Interface page, or its embed link.
   airtable_shared_page: { url: string };
   bgg_collection: { username: string };
   cardboard_connect: { instanceId: string };
   google_sheet: { url: string; sheetName?: string };
+  // Each path is a dot-separated list of object keys. With no itemsPath, the response is the array.
+  json_api: {
+    url: string;
+    itemsPath?: string;
+    namePath: string;
+    bggIdPath?: string;
+    where?: JsonApiCondition[];
+  };
   tabletop_events: { username: string; libraryId: string };
   web_page: { url: string; scraperRules: ScraperRule[] };
 };
