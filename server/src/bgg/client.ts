@@ -175,7 +175,8 @@ export class BggClient {
     const { mytags } = (await (await this.request(url)).json()) as {
       mytags: { rawtag: string; pinid: number }[];
     };
-    const pin = mytags.find((myTag) => myTag.rawtag === tag);
+    // BGG treats tags that differ only in case as the same tag.
+    const pin = mytags.find((myTag) => myTag.rawtag.toLowerCase() === tag.toLowerCase());
     if (pin)
       await this.request(`${this.options.baseUrl}/api/pins/${pin.pinid}`, { method: "DELETE" });
   }

@@ -20,5 +20,5 @@ Before this decision, a failed tag change was lost. The importer chose tag chang
 - Tags lag behind the database until someone runs `pnpm tags:sync`. The import summary shows the number of pending tag changes for each collection.
 - A tag sync sends one request for each tag added, and two for each tag removed, 2 seconds apart. A new large collection takes hours to tag.
 - Another host can run `pnpm tags:sync` on a schedule, if BGG allows its network. Pipedream did.
-- The tag state in the database can still differ from BGG, for example when a person changes a tag on BGG. Only a full read of the tags on BGG can find this.
+- The tag state in the database can still differ from BGG, for example when a person changes a tag on BGG. Only a full read of the tags on BGG can find this. `pnpm tags:audit` does this read from a file, because Cloudflare also serves BGG's tag pages only to real browsers: `server/scripts/export-bgg-tags.browser.js` makes the file in a signed-in browser tab.
 - A sync handles only the tags of current collections. When a collection is deleted, or its `bgg_tag` changes, its old tags stay on BGG, and so do its pending rows in `bgg_tag_removals`. These changes are rare, so a full read of the tags on BGG finds them instead.

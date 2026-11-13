@@ -14,6 +14,8 @@ blob-report/
 
 # Collection lists for scripts/upsert-collections.ts. They can name private individuals.
 collections.*.json
+# BGG tag exports for scripts/audit-bgg-tags.ts. Tag names can name private individuals.
+bgg-tags*.json
 
 # Vercel CLI project link and build output.
 .vercel/
