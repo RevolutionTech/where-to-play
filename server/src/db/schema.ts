@@ -113,9 +113,12 @@ export type SourceConfigByKind = {
     namePath: string;
     bggIdPath?: string;
     where?: JsonApiCondition[];
+    // Sends a POST with these fields as a form body, for APIs that return the list only to a form.
+    form?: Record<string, string>;
   };
   tabletop_events: { username: string; libraryId: string };
-  web_page: { url: string; scraperRules: ScraperRule[] };
+  // nextPageRule selects the link to the next page of a list that has more than one page.
+  web_page: { url: string; scraperRules: ScraperRule[]; nextPageRule?: ScraperRule };
 };
 
 export type SourceConfig = SourceConfigByKind[keyof SourceConfigByKind];

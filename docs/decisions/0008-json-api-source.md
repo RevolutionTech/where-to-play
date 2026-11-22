@@ -16,6 +16,7 @@ Tabletop Library is one collection, and its catalogue software is its own. A sou
   - `namePath`: the path to the game name in each item.
   - `bggIdPath` (optional): the path to the BGG ID in each item.
   - `where` (optional): conditions that each item must pass, such as `{ "path": "copies_in_library", "greaterThan": 0 }`.
+  - `form` (optional): fields to send as a form body in a POST, for an API that returns the list only to a form. Snakes & Lattes needs this: a GET returns the games of all its locations, with no field that tells the location, and a POST with the location's form fields returns the games of one location.
 - **A path is a dot-separated list of object keys**, for example `shelf.code`. Paths have no array indexes or wildcards.
 - **A BGG ID is a positive integer, or a string that holds one.** Any other value means the game has no BGG ID. Sources use 0, null, or a blank string for this.
 - **A missing items array fails the import.** A renamed name or BGG ID field does not fail it. The importer's shrink check ([0003](0003-collection-importer.md)) stops that import, because most items then have no name and no BGG ID.

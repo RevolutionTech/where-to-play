@@ -4,10 +4,11 @@ import type { SourceGame } from "./index";
 
 /** Reads one JSON response, with no pagination. See docs/decisions/0008-json-api-source.md. */
 export async function fetchJsonApi(
-  { url, itemsPath, namePath, bggIdPath, where = [] }: SourceConfigByKind["json_api"],
+  { url, itemsPath, namePath, bggIdPath, where = [], form }: SourceConfigByKind["json_api"],
   { fetch }: { fetch: Fetch },
 ): Promise<SourceGame[]> {
-  const body: unknown = await (await ensureOk(await fetch(url))).json();
+  const request = form ? { method: "POST", body: new URLSearchParams(form) } : {};
+  const body: unknown = await (await ensureOk(await fetch(url, request))).json();
   const items = itemsPath ? valueAt(body, itemsPath) : body;
   if (!Array.isArray(items)) {
     throw new Error(`The JSON response has no array at "${itemsPath ?? "(root)"}".`);
