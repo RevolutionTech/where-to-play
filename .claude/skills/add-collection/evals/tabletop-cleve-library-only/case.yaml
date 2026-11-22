@@ -1,0 +1,4 @@
+schema_version: "1.1"
+name: tabletop-cleve-library-only
+expected_outcome: |
+  The website is inferred from the library link. The site's robots.txt disallows URLs with a query string (`Disallow: /*?`), so the paginated list (`?page=N`) cannot be read. The run finds this, says that the collection is not feasible, does not plan a new source kind, and writes nothing.

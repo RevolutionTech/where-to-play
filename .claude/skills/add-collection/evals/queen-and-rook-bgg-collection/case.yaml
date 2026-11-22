@@ -1,0 +1,4 @@
+schema_version: "1.1"
+name: queen-and-rook-bgg-collection
+expected_outcome: |
+  A proposal for a cafe in Toronto that uses the bgg_collection source with username queenandrook, previewed before it is proposed, and no write to the database before approval.
