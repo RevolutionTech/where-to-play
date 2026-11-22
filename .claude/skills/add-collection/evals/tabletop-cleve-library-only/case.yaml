@@ -1,0 +1,4 @@
+schema_version: "1.1"
+name: tabletop-cleve-library-only
+expected_outcome: |
+  The website is inferred from the library link. The proposal names a source kind and config that reads the library (or, if none fits, a plan for a general new source kind), with no write to the database before approval.

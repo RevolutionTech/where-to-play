@@ -9,7 +9,7 @@ The weekly collection importer (`server/scripts/import-collections.ts`) saves ea
 
 ## Environment
 
-- Run commands from `server/`. Production credentials are in `server/.env.prod`, which git ignores: `DATABASE_URL` and `BGG_API_TOKEN`. Never print either value.
+- Run commands from `server/`. Production credentials are in `.env.production` at the root of the main checkout, which git ignores. In a worktree, get the main checkout's path with `git worktree list --porcelain | sed -n '1s/^worktree //p'`. The script needs `DATABASE_URL` and `BGG_API_TOKEN`. Never print the values.
 - `scripts/review-unmatched-names.ts` does all reads and writes:
   - `--list` prints the pending names as a JSON array.
   - `--apply <decisions.json>` saves decisions in one transaction. Add `--dry-run` to see the result and save nothing.
@@ -20,7 +20,7 @@ The weekly collection importer (`server/scripts/import-collections.ts`) saves ea
 ### Step 1: Get the queue
 
 ```bash
-pnpm exec tsx --env-file=.env.prod scripts/review-unmatched-names.ts --list
+pnpm exec tsx --env-file=<main checkout>/.env.production scripts/review-unmatched-names.ts --list
 ```
 
 If the list is empty, tell the user that there is nothing to review, and stop.
@@ -80,7 +80,7 @@ Write the confirmed decisions to a JSON file in your scratchpad directory, not i
 Use each name exactly as `--list` printed it. Run a dry run first, and show the user its result table:
 
 ```bash
-pnpm exec tsx --env-file=.env.prod scripts/review-unmatched-names.ts --apply <file> --dry-run
+pnpm exec tsx --env-file=<main checkout>/.env.production scripts/review-unmatched-names.ts --apply <file> --dry-run
 ```
 
 If the user agrees, run it again without `--dry-run`. Each result is one of these:
