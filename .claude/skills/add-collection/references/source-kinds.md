@@ -10,7 +10,7 @@ How to recognize each source kind, and how to find the values of its `sourceConf
 | `airtable_shared_page` | `airtable.com/app.../shr...` | No |
 | `google_sheet` | `docs.google.com/spreadsheets/d/<id>` | No |
 | `json_api` | Any page that loads the whole list in one JSON response | Only with `bggIdPath` |
-| `web_page` | A page whose HTML (from `curl`) has the game names in it | No |
+| `web_page` | A page (or a list of pages with "next" links) whose HTML from `curl` has the game names in it | No |
 
 ## bgg_collection
 
@@ -79,6 +79,7 @@ See `docs/decisions/0008-json-api-source.md`.
 - `itemsPath` is the path to the array of items. Leave it out when the response is the array.
 - Paths are object keys joined by dots (`shelf.code`). They have no array indexes or wildcards.
 - Use `where` to leave out items that the location does not have for play, for example games that it only sells, or games that it sold or lost. Look for a field such as a copy count or a status. Keep games that are archived, in storage, or checked out: the location still owns them, and a player can ask for them.
+- Use `form` when the API returns the list only to a POST with form fields, for example `{ "post": "location_id=1&search=" }`. Copy the fields from the request in the browser's network requests. With `form`, the source sends a POST; without it, a GET.
 - The source makes one request. It has no pagination, no request headers, and no condition other than `greaterThan`. If the API needs one of these, see "When no source kind fits" in `SKILL.md`. Before you decide that the API has pages, try parameters that return everything, for example `?per_page=1000`, `?limit=10000`, or `?all=1`.
 
 ## web_page
@@ -97,4 +98,4 @@ See `docs/decisions/0008-json-api-source.md`.
 - Each rule selects elements inside the elements that the rule before it selected. The text of each element that the last rule selects is one game name. So the last rule must select elements that contain only the name: no price, no description, no player count.
 - An attribute must match its whole value, except `class`, which matches one class of the element. A list of values matches any one of them, for example `{ "class": ["game", "expansion"] }`.
 - Prefer attributes that describe the content (`role`, `aria-label`, semantic class names) to generated class names (`css-1x2y3z`), which change when the site is built again.
-- The source reads one page. If the list has more than one page, this source does not fit as it is.
+- If the list has more than one page, add a `nextPageRule` that selects the link to the next page, for example `{ "element": "a", "attributes": { "rel": "next" } }`. The source follows that link, with 1 second between pages, until a page has none. A list whose pages have no "next" link (only page numbers, or "load more" with JavaScript) does not fit as it is.

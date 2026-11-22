@@ -24,7 +24,7 @@ The app has a React SPA (`client/`) and an API server (`server/`). The server re
   - `src/db/client.ts`: `createDatabase(url)`. Do not create a client at module top level.
   - `src/db/seed.ts`: sample data. `scripts/seed.ts` runs it, only against localhost.
   - `drizzle/`: SQL migrations. Generate them with `pnpm db:generate`. Do not edit `drizzle/meta/`.
-  - `src/importer/`: the collection importer. `sources/` has one fetcher for each `source_kind`. `json_api` reads any JSON API that its config describes; see `docs/decisions/0008-json-api-source.md`. `scripts/import-collections.ts` runs it.
+  - `src/importer/`: the collection importer. `sources/` has one fetcher for each `source_kind`. `json_api` reads any JSON API that its config describes; see `docs/decisions/0008-json-api-source.md`. `web_page` can follow "next page" links; see `docs/decisions/0009-web-page-pagination.md`. `scripts/import-collections.ts` runs it.
   - `src/importer/bgg-tags.ts`: applies pending BGG tag changes. `scripts/sync-bgg-tags.ts` runs it. See `docs/decisions/0007-bgg-tag-sync.md`.
   - `src/importer/bgg-tag-audit.ts`: compares the tags on BGG with `collection_games`. `scripts/audit-bgg-tags.ts` runs it on a file that `scripts/export-bgg-tags.browser.js` downloads in a browser. Git ignores these `bgg-tags*.json` files, because tag names can name individuals.
   - `scripts/review-unmatched-names.ts`: lists pending names in `unmatched_names` and saves review decisions. The `unmatched-name-review` skill (`.claude/skills/`) uses it.

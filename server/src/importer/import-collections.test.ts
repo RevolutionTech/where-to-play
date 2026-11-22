@@ -482,6 +482,61 @@ describe("importing a web page", () => {
     expect(report).toMatchObject({ outcome: "imported", sourceGameCount: 2 });
     expect(await gamesIn("guildhouse")).toEqual(["Azul", "Catan"]);
   });
+  it("reads each page that the next page rule links to", async () => {
+    await addCollection("cafe", "web_page", {
+      url: "https://cafe.example/games",
+      scraperRules: [{ element: "ul" }, { element: "li" }],
+      nextPageRule: { element: "a", attributes: { rel: "next" } },
+    });
+    await addGame("Catan", 13);
+    await addGame("Azul", 230802);
+    await addGame("Splendor", 148228);
+    const web = fakeWeb(
+      webPage(
+        "https://cafe.example/games",
+        `<ul><li>Catan</li></ul><a rel="next" href="/games?page=2">Next</a>`,
+      ),
+      webPage(
+        "https://cafe.example/games?page=2",
+        `<ul><li>Azul</li></ul><a rel="prev" href="/games">Previous</a><a rel="next" href="?page=3">Next</a>`,
+      ),
+      webPage("https://cafe.example/games?page=3", `<ul><li>Splendor</li></ul>`),
+      bggLogin,
+      bggAddTag,
+    );
+
+    const [report] = await importWith(web);
+
+    expect(report).toMatchObject({ outcome: "imported", sourceGameCount: 3 });
+    expect(await gamesIn("cafe")).toEqual(["Azul", "Catan", "Splendor"]);
+  });
+
+  it("stops when the next page rule links to a page that it already read", async () => {
+    await addCollection("cafe", "web_page", {
+      url: "https://cafe.example/games",
+      scraperRules: [{ element: "li" }],
+      nextPageRule: { element: "a", attributes: { class: "next" } },
+    });
+    await addGame("Catan", 13);
+    await addGame("Azul", 230802);
+    const web = fakeWeb(
+      webPage(
+        "https://cafe.example/games",
+        `<li>Catan</li><a class="next" href="https://cafe.example/games/2">Next</a>`,
+      ),
+      webPage(
+        "https://cafe.example/games/2",
+        `<li>Azul</li><a class="next" href="https://cafe.example/games">Next</a>`,
+      ),
+      bggLogin,
+      bggAddTag,
+    );
+
+    const [report] = await importWith(web);
+
+    expect(report).toMatchObject({ outcome: "imported", sourceGameCount: 2 });
+    expect(web.requests.filter(({ url }) => url.hostname === "cafe.example")).toHaveLength(2);
+  });
 });
 
 describe("importing a Tabletop.Events library", () => {
@@ -736,6 +791,34 @@ describe("importing a JSON API", () => {
     await addGame("Azul", 230802);
     const web = fakeWeb(
       jsonApi("https://library.example/games.json", [{ name: "Azul" }]),
+      bggLogin,
+      bggAddTag,
+    );
+
+    const [report] = await importWith(web);
+
+    expect(report).toMatchObject({ outcome: "imported", sourceGameCount: 1 });
+    expect(await gamesIn("library")).toEqual(["Azul"]);
+  });
+
+  it("sends the form fields in a POST when the config has a form", async () => {
+    await addCollection("library", "json_api", {
+      url: "https://library.example/games.php",
+      namePath: "title",
+      form: { post: "location_id=1&search=" },
+    });
+    await addGame("Azul", 230802);
+    await addGame("Catan", 13);
+    const web = fakeWeb(
+      (url, init) => {
+        if (url.href !== "https://library.example/games.php") return undefined;
+        const fields = new URLSearchParams(String(init.body));
+        const locationGames =
+          init.method === "POST" && fields.get("post") === "location_id=1&search="
+            ? [{ title: "Azul" }]
+            : [{ title: "Azul" }, { title: "Catan" }];
+        return Response.json(locationGames);
+      },
       bggLogin,
       bggAddTag,
     );
