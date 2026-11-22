@@ -1,0 +1,4 @@
+schema_version: "1.1"
+name: snakes-and-lattes-annex-franchise
+expected_outcome: |
+  A proposal for the Annex location of the Snakes & Lattes franchise only, with the location page (not the franchise home page) as the website, a source config that reads only the Annex library, a preview, and no write to the database before approval.
