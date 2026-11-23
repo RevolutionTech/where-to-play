@@ -37,7 +37,20 @@ For each name, decide:
   - A name that lists a game with its expansions ("Dominion with most expansions") gets the base game's ID.
 - **`ignore`**: the name is not a board game or an expansion. Examples: playing cards, contest entries, playmats, terrain, miniature sets. Collections leave BGG accessories (`boardgamegeek.com/boardgameaccessory/<id>`) out, so an accessory is also `ignore`.
 - **No match**: you found no plausible BGG entry, but the item looks like a game. Suggest `ignore`, so the name leaves the queue. The user can choose to leave it pending instead, to add the game by hand later.
-- **Note**: a short flag for anything that the user must check. Examples: two plausible BGG entries, wording that differs from the BGG title, an edition mapped to its base game.
+- **More than one plausible entry**: choose one with these rules, in this order:
+  1. **Clues in the name.** Look closely at text in the name that is not in the title of any plausible entry. It can be a year ("Agricola (2016)"), a publisher ("Baba Yaga (Gamewright)"), or how the box looks ("BuzzWord (Red Copy)"). Find the entry that the clue points to, for example from the publishers and editions on its BGG page. If BGG confirms the clue (the publisher is on only one entry), this decision is a match. If not, it is a **guess**.
+  2. **An exact title.** If the name is the whole title of one entry, and only part of the title of the others ("Imposter" and "Imposter!: The After-Dinner Mystery Game"), choose the exact title. This decision is a match.
+  3. **Rank, then year.** Choose the entry with the better BGG rank. If no entry has a rank, choose the newest one. Rule out an entry whose year is after the current year. This decision is a match when the name is only part of each title ("Team3" for "TEAM3 GREEN" and "TEAM3 PINK"). It is a **guess** when two or more entries have the same title as the name.
+
+  For a guess, name the other entries in the note. For a clue, say what it points to.
+- **Note**: a short flag for anything that the user must check. Examples: wording that differs from the BGG title, an edition mapped to its base game.
+
+#### A large queue
+
+If more than 30 names are pending, the user reviews only the guesses:
+
+- Save each clear match as matched, and each name that is not a game or has no match as `ignore`. Do not show these rows.
+- The table in Step 3 shows only the guess rows. Above the table, give the number of names in each group.
 
 ### Step 3: Show the review table
 
@@ -48,7 +61,7 @@ Render an HTML widget with `show_widget`. Do not print the table as text too.
 | Name | The exact pending name, in monospace |
 | BGG title | The BGG title, with designer · publisher · player count · year as a muted subtitle |
 | BGG ID | A link to `boardgamegeek.com/boardgame/<id>` or `/boardgameexpansion/<id>` |
-| Notes | A short flag, a red `ignore` badge, or a grey `no match` badge followed by the red `ignore` badge (the suggested decision) |
+| Notes | A short flag, an amber `guess` badge followed by the other plausible entries, a red `ignore` badge, or a grey `no match` badge followed by the red `ignore` badge (the suggested decision) |
 
 Style:
 
@@ -58,13 +71,14 @@ Style:
 - Name column: `font-family: var(--font-mono)`, `color: var(--color-text-tertiary)`.
 - BGG ID column: monospace, `color: var(--color-text-info)`, linked.
 - `ignore` badge: `background: var(--color-background-danger); color: var(--color-text-danger)`.
+- `guess` badge: `background: var(--color-background-warning); color: var(--color-text-warning)`.
 - No thumbnails, because BGG's image CDN blocks cross-origin requests.
 - Use `table-layout: fixed` with `<colgroup>` widths, so that long names do not overflow.
 - Put all data in the HTML. Do not add a script that fetches data.
 
 ### Step 4: Confirm with the user
 
-Ask the user which rows to save. They can accept all rows, change a BGG ID, change a row to `ignore`, or skip a row.
+Ask the user which rows to save. They can accept all rows, change a BGG ID, change a row to `ignore`, or skip a row. For a large queue, the rows that the table does not show are saved with the confirmed rows.
 
 ### Step 5: Save the decisions
 
