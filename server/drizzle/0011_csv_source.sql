@@ -1,0 +1,1 @@
+ALTER TYPE "where_to_play"."source_kind" ADD VALUE 'csv' BEFORE 'google_sheet';

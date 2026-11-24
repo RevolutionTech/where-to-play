@@ -846,6 +846,58 @@ describe("importing a JSON API", () => {
   });
 });
 
+describe("importing a CSV file", () => {
+  function csvFile(fileUrl: string, text: string): Route {
+    return (url) => (url.href === fileUrl ? new Response(text) : undefined);
+  }
+
+  it("keeps the rows that pass every condition, and reads a BGG ID or a BGG link", async () => {
+    await addCollection("pub", "csv", {
+      url: "https://sheets.example/pub?output=csv",
+      nameColumn: "Game",
+      bggIdColumn: "URL",
+      where: [{ column: "Hidden?", equals: "FALSE" }],
+    });
+    await addGame("Azul", 230802);
+    await addGame("Wingspan", 266192);
+    const web = fakeWeb(
+      csvFile(
+        "https://sheets.example/pub?output=csv",
+        [
+          "Notes,Game,Hidden?,URL",
+          '"Shelf A,\nback row",Catan,FALSE,https://boardgamegeek.com/boardgame/13/catan',
+          ",Azul,FALSE,https://azul.example/rules",
+          ",Wingspan,FALSE,266192",
+          "missing,Brass: Birmingham,TRUE,https://boardgamegeek.com/boardgame/224517/brass",
+        ].join("\n"),
+      ),
+      bggThings({ bggId: 13, name: "Catan" }),
+      bggLogin,
+      bggAddTag,
+    );
+
+    const [report] = await importWith(web);
+
+    expect(report).toMatchObject({ outcome: "imported", sourceGameCount: 3 });
+    expect(await gamesIn("pub")).toEqual(["Azul", "Catan", "Wingspan"]);
+  });
+
+  it("fails, and keeps the collection's games, when the CSV has no name column", async () => {
+    const collection = await addCollection("pub", "csv", {
+      url: "https://sheets.example/pub?output=csv",
+      nameColumn: "Game",
+    });
+    const azul = await addGame("Azul", 230802);
+    await db.insert(collectionGames).values({ collectionId: collection.id, gameId: azul.id });
+    const web = fakeWeb(csvFile("https://sheets.example/pub?output=csv", "Title\nAzul\n"));
+
+    const [report] = await importWith(web);
+
+    expect(report).toMatchObject({ outcome: "failed", reason: expect.stringContaining('"Game"') });
+    expect(await gamesIn("pub")).toEqual(["Azul"]);
+  });
+});
+
 describe("reporting a failed source", () => {
   it("leaves the API key out of the reason, because workflow logs are public", async () => {
     await addCollection("gamescape", "google_sheet", {

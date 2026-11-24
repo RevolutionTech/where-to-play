@@ -87,6 +87,7 @@ export const sourceKind = whereToPlay.enum("source_kind", [
   "airtable_shared_page",
   "bgg_collection",
   "cardboard_connect",
+  "csv",
   "google_sheet",
   "json_api",
   "tabletop_events",
@@ -100,11 +101,15 @@ export type ScraperRule = {
 
 export type JsonApiCondition = { path: string; greaterThan: number };
 
+export type CsvCondition = { column: string; equals: string };
+
 export type SourceConfigByKind = {
   // The link to a shared Airtable Interface page, or its embed link.
   airtable_shared_page: { url: string };
   bgg_collection: { username: string };
   cardboard_connect: { instanceId: string };
+  // Columns are header names from the first row. bggIdColumn holds a BGG ID or a link to the game on BGG.
+  csv: { url: string; nameColumn: string; bggIdColumn?: string; where?: CsvCondition[] };
   google_sheet: { url: string; sheetName?: string };
   // Each path is a dot-separated list of object keys. With no itemsPath, the response is the array.
   json_api: {

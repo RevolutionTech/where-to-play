@@ -9,6 +9,7 @@ How to recognize each source kind, and how to find the values of its `sourceConf
 | `tabletop_events` | A library on `tabletop.events`; requests to `tabletop.events/api/library/...` | Yes, for most games |
 | `airtable_shared_page` | `airtable.com/app.../shr...` | No |
 | `google_sheet` | `docs.google.com/spreadsheets/d/<id>` | No |
+| `csv` | A CSV file; a Google Sheet link with `/d/e/2PACX-...` and `output=csv`, often seen in network requests | Only with `bggIdColumn` |
 | `json_api` | Any page that loads the whole list in one JSON response | Only with `bggIdPath` |
 | `web_page` | A page (or a list of pages with "next" links) whose HTML from `curl` has the game names in it | No |
 
@@ -59,7 +60,25 @@ How to recognize each source kind, and how to find the values of its `sourceConf
 - The importer reads column A, under one header row. If the names are in another column, or the sheet has more than one header row, this source does not fit as it is.
 - `sheetName` is the name of the tab. Leave it out to read the first visible tab.
 - The sheet must be viewable by anyone with the link, because the importer reads it with an API key, not with an account.
-- A sheet that the website embeds (`/pubhtml`, or an `iframe`) has the spreadsheet ID in its URL. A `/d/e/2PACX-...` link is a "publish to the web" link, and its ID is not the spreadsheet ID. Ask the user for the normal link, or try `web_page` on the published HTML.
+- A sheet that the website embeds (`/pubhtml`, or an `iframe`) has the spreadsheet ID in its URL. A `/d/e/2PACX-...` link is a "publish to the web" link, and its ID is not the spreadsheet ID. Use `csv` with the published link and `output=csv`.
+
+## csv
+
+```json
+{
+  "url": "https://docs.google.com/spreadsheets/d/e/2PACX-.../pub?gid=0&single=true&output=csv",
+  "nameColumn": "Game",
+  "bggIdColumn": "URL",
+  "where": [{ "column": "Hidden?", "equals": "FALSE" }]
+}
+```
+
+See `docs/decisions/0010-csv-source.md`.
+
+- Use it for a Google Sheet that is published to the web (a `/d/e/2PACX-...` link). For a published sheet, set `output=csv` in the link. Prefer `google_sheet` only when the sheet has the normal `/d/<id>` link and the names are in column A with no BGG IDs.
+- Columns are the header names in the first row, exactly as written.
+- `bggIdColumn` can hold a BGG ID or a link to the game on BoardGameGeek.
+- Use `where` to leave out rows that the location does not have for play, as for `json_api`. Each condition compares the cell text exactly, for example `"FALSE"`.
 
 ## json_api
 

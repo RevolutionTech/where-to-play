@@ -3,6 +3,7 @@ import type { collections, SourceConfigByKind } from "../../db/schema";
 import type { Fetch, Sleep } from "../../http";
 import { fetchAirtableSharedPage } from "./airtable-shared-page";
 import { fetchCardboardConnectLibrary } from "./cardboard-connect";
+import { fetchCsv } from "./csv";
 import { fetchGoogleSheet } from "./google-sheet";
 import { fetchJsonApi } from "./json-api";
 import { fetchTabletopEventsLibrary } from "./tabletop-events";
@@ -61,6 +62,8 @@ async function fetchFromSource(
       const { libraryId } = sourceConfig as SourceConfigByKind["tabletop_events"];
       return fetchTabletopEventsLibrary(libraryId, context);
     }
+    case "csv":
+      return fetchCsv(sourceConfig as SourceConfigByKind["csv"], context);
     case "google_sheet":
       return fetchGoogleSheet(sourceConfig as SourceConfigByKind["google_sheet"], {
         fetch: context.fetch,
